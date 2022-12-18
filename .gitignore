@@ -13,3 +13,22 @@
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
+
+# Mobile Tools for Java (J2ME)
+.mtj.tmp/
+.logs/*
+**/*.iml
+# Package Files #
+*.jar
+*.war
+*.ear
+target
+.idea
+.DS_Store
+exports
+# virtual machine crash logs, see
+hs_err_pid*
+.tags
+.tags_sorted_by_file
+
+
