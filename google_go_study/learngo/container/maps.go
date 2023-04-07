@@ -6,6 +6,8 @@ import "fmt"
   @author: CodeWater
   @since: 2023/4/5
   @desc: map基本概念和操作
+		 1. 获取mao中的值时，也是返回多个参数的，第一个是值，第二个是bool。
+			ageExist, ok := m["agee"]
 **/
 
 func mapInit() {
