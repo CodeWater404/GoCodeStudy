@@ -61,18 +61,3 @@ func (node *TreeNode) SetValuePointer(value int) {
 	}
 	node.Value = value
 }
-
-/**traverse
-** @Description: 中序遍历
-** @receiver node
-**/
-func (node *TreeNode) Traverse() {
-	if node == nil {
-		return
-	}
-
-	node.Left.Traverse() //这里如果是别的语言还要判断Left是否为空，但是go不需要，因为nil也可调用函数
-	node.Print()
-	node.Right.Traverse()
-
-}

@@ -13,7 +13,33 @@ import (
 		2. 名字一般使用CamelCase
 		3. 首字母大写表示：public
 		4. 首字母小写表示：private
+		结构体扩展
+		1. 通过组合，实现对原有包下面的结构体进行扩展
+		2. 通过别名来扩展别人已经实现的封装结构体slice（数组）
 **/
+
+//
+//  myTreeNode
+//  @Description: 通过组合，实现对原有包下面的结构体进行扩展
+//
+type myTreeNode struct {
+	node *tree.TreeNode //用指针改变值
+}
+
+/**postOrder
+** @Description: 扩展已有结构体的方法，后序遍历
+** @receiver node
+**/
+func (node *myTreeNode) postOrder() {
+	if node == nil || node.node == nil {
+		return
+	}
+	left := myTreeNode{node.node.Left}
+	right := myTreeNode{node.node.Right}
+	left.postOrder()
+	right.postOrder()
+	node.node.Print()
+}
 
 func main() {
 	var root tree.TreeNode
@@ -53,4 +79,9 @@ func main() {
 
 	fmt.Println("=============================traverse=============================")
 	root.Traverse()
+
+	fmt.Println("=============================postOrder=============================")
+	myRoot := myTreeNode{&root}
+	myRoot.postOrder()
+
 }
