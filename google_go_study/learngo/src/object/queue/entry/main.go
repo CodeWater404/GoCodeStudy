@@ -21,4 +21,8 @@ func main() {
 	fmt.Println(q.Pop())
 	fmt.Println(q.IsEmpty())
 
+	fmt.Println("=============================1.支持任何类型的queue=============================")
+	q.Push("abc")
+	fmt.Println(q.Pop())
+
 }
