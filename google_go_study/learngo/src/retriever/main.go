@@ -19,15 +19,47 @@ import (
 		6.指针接收者实现只能以指针方式使用；值接收者都可
 **/
 
+const url = "https://www.baidu.com"
+
 type Retriever interface {
 	Get(url string) string //这里函数的实现是在mock/Retriever结构体中
+}
+
+type Poster interface {
+	Post(url string, form map[string]string) string
+}
+
+//
+//  RetrieverPoster
+//  @Description: 接口的组合
+//
+type RetrieverPoster interface {
+	Retriever
+	Poster
 }
 
 func download(r Retriever) string {
 	return r.Get("http://www.baidu.com")
 }
 
+func Post(poster Poster) {
+	poster.Post(url, map[string]string{
+		"name":   "code",
+		"course": "goland",
+	})
+}
+
+func session(s RetrieverPoster) string {
+	s.Post(url, map[string]string{
+		"contents": "another faked ibaidu.com",
+	})
+	return s.Get(url)
+}
+
 func inspect(r Retriever) {
+	fmt.Println("Inspecting", r)
+	fmt.Printf(" > %T  , %v \n", r, r)
+	fmt.Print(" > Type switch:")
 	fmt.Printf("type: %T , value: %v\n", r, r)
 	switch v := r.(type) {
 	case mock.Retriever:
@@ -63,4 +95,10 @@ func main() {
 	}
 
 	//fmt.Println(download(r)) //1
+
+	//6.
+	fmt.Println("==========Try a session=============")
+	var s RetrieverPoster
+	s = &mock.Retriever{"hhhhhhhhh"}
+	fmt.Println(session(s))
 }
