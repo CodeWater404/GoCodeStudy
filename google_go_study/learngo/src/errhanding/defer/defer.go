@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"learngo/functional/fib"
 	"os"
@@ -47,9 +48,21 @@ func tryDefer2() {
 }
 
 func writeFile(filename string) {
-	file, err := os.Create(filename)
+	//file, err := os.Create(filename)
+	file, err := os.OpenFile(filename, os.O_EXCL|os.O_CREATE, 0666)
+
+	//还可以自定义错误
+	err = errors.New("this is a custom error!")
+
+	//错误处理
 	if err != nil {
-		panic(err)
+		//已知错误
+		if pathError, ok := err.(*os.PathError); !ok {
+			panic(err)
+		} else { //未知错误
+			fmt.Printf("%s , %s , %s \n", pathError.Op, pathError.Path, pathError.Err)
+		}
+		return
 	}
 	defer file.Close()
 
