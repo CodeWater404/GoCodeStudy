@@ -10,7 +10,8 @@ import (
 /**
   @author: CodeWater
   @since: 2023/4/16
-  @desc: 服务器统一错误处理示例
+  @desc: 服务器统一错误处理示例:
+		defer + panic +recover
 **/
 
 type appHandler func(writer http.ResponseWriter, request *http.Request) error
@@ -61,7 +62,7 @@ type userError interface {
 
 func main() {
 	//浏览器访问地址：http://localhost:8888/list/fib.txt
-	http.HandleFunc("/list/", errWrapper(filelisting.HandleFileList))
+	http.HandleFunc("/", errWrapper(filelisting.HandleFileList))
 	err := http.ListenAndServe(":8888", nil)
 	if err != nil {
 		panic(err)

@@ -58,7 +58,7 @@ func euler() {
 	//fmt.Println(cmplx.Abs(c))
 
 	//公式: e^iΠ + 1 = 0
-	fmt.Println("%.3f\n", cmplx.Exp(1i*math.Pi)+1)
+	fmt.Printf("%.3f\n", cmplx.Exp(1i*math.Pi)+1)
 }
 
 //类型转换是强制的
@@ -67,6 +67,17 @@ func triangle() {
 	var c int
 	c = int(math.Sqrt(float64(a*a + b*b)))
 	fmt.Println(c)
+}
+
+func triangleTest() {
+	var a, b int = 3, 4
+	fmt.Println(calcTriangle(a, b))
+}
+
+func calcTriangle(a, b int) int {
+	var c int
+	c = int(math.Sqrt(float64(a*a + b*b)))
+	return c
 }
 
 //const
