@@ -6,6 +6,11 @@ package queue
   @desc: queue
 		1. 将NewInt定义为int类型
 			type NewInt int
+
+	生成文档(命令行)：
+		1.go doc:查看包的
+		2.go doc Queue：查看包和接口的
+		3.godoc -http ：6060 ： 用浏览器查看本地所有的包及自己写的代码生成的文档
 **/
 
 //通过别名来扩展别人已经实现的封装结构体slice（数组）

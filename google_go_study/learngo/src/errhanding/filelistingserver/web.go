@@ -22,7 +22,7 @@ func errWrapper(handler appHandler) func(http.ResponseWriter, *http.Request) {
 		//错误panic处理
 		defer func() {
 			if r := recover(); r != nil {
-				log.Println("Panic: %v", r)
+				log.Printf("Panic: %v", r)
 				http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			}
 		}()
