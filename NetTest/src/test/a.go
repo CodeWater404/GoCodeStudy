@@ -1,153 +1,86 @@
 package main
 
 import (
-	"bufio"
-	"crypto/tls"
-	"fmt"
-	"io/ioutil"
-	"net"
+	"NetTest/hand"
+	"log"
 	"net/http"
-	"strings"
+	"os"
 )
 
 /**
   @author: CodeWater
   @since: 2023/4/23
   @desc:
-	该程序将在A服务器上启动两个HTTP服务器，一个监听在8855端口，另一个监听在8854端口。
-	当收到HTTP请求时，它将建立一个TCP连接到B服务器的9222端口，并将请求发送到该服务器。然后，它将等待响应，并从响应中读取响应正文。它将修改响应正文以包含所需的MAC地址，并将其发送回A服务器上的浏览器。它还将添加一个X-Proxy-Server头，指示这是一个代理服务器。它将在控制台上记录请求和响应。
-	对于HTTPS请求，该程序将使用TLS Dial函数建立一个加密的TCP连接到B服务器的9222端口，并发送请求。然后，它将等待响应，并从响应中读取响应正文。它将修改响应正文以包含所需的MAC地址，并将其发送回A服务器上的浏览器。它还将添加一个X-Proxy-Server头，指示这是一个代理服务器。它将在控制台上记录请求和响应。
-	最后，程序还包括一个getMAC函数，它将返回本地机器上第一个网络接口的MAC地址。
-	请注意，本示例程序仅供参考，并可能需要根据您的特定需求进行修改。此外，请确保将IP地址和端口更改为您的实际值，并在A服务器上运行该程序以启动代理服务器。
-
 	todo：
-		1. 修改由变量指定域名（httpde）
-		2. 错误处理
-		3. 发布到服务器
-		4. 优化，54变成https的
+		https报错：
+			2023/04/26 02:08:26 http: TLS handshake error from 127.0.0.1:58055: remote error: tls: unknown certificate
+			2023/04/26 02:08:26 http: TLS handshake error from 127.0.0.1:58056: remote error: tls: unknown certificate
+
 **/
 
-func connectServer(w http.ResponseWriter, r *http.Request) {
-	// Create a new TCP connection to the remote server (B)
-	//conn, err := net.Dial("tcp", "10.18.13.101:9222")
-	conn, err := net.Dial("tcp", "127.0.0.1:9222")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	defer conn.Close()
-
-	// Send the HTTP request to the remote server
-	r.Write(conn)
-
-	// Read the response from the remote server
-	resp, err := http.ReadResponse(bufio.NewReader(conn), r)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	defer resp.Body.Close()
-
-	// Read the response body
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	// Modify the response body to add the MAC address
-	mac := getMAC()
-	newBody := strings.Replace(string(body), "Hello, world!", fmt.Sprintf("http B mac地址是：%s", mac), -1)
-
-	// Set the modified response body and headers
-	w.Write([]byte(newBody))
-	w.Header().Set("Content-Type", "text/plain")
-	w.Header().Set("X-Proxy-Server", "GoProxy")
-
-	// Log the request and response
-	fmt.Printf("Request method: %s , path: %s\nResponse status:%s\n", r.Method, r.URL.Path, resp.Status)
-	fmt.Println()
+type userError interface {
+	error
+	Message() string
 }
 
-func getMacAddrForHttps(w http.ResponseWriter, r *http.Request) {
-	// Create a new TCP connection to the remote server (B)
-	//conn, err := tls.Dial("tcp", "10.18.13.101:9222", &tls.Config{})
-	conn, err := tls.Dial("tcp", "127.0.0.1:9222", &tls.Config{})
+type appHandler func(writer http.ResponseWriter, request *http.Request) error
 
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+func errWrapper(handler appHandler) func(http.ResponseWriter, *http.Request) {
+	return func(writer http.ResponseWriter, request *http.Request) {
+		//错误panic处理
+		defer func() {
+			if r := recover(); r != nil {
+				log.Printf("Panic: %v", r)
+				http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			}
+		}()
+
+		err := handler(writer, request)
+		//处理接口返回的报错类型
+		if err != nil {
+			//加log打印错误请求日志
+			log.Printf("error handing request:%s", err.Error())
+
+			if userErr, ok := err.(userError); ok {
+				http.Error(writer, userErr.Message(), http.StatusBadRequest)
+				return
+			}
+
+			code := http.StatusOK
+			switch {
+			case os.IsNotExist(err):
+				code = http.StatusNotFound
+			case os.IsPermission(err):
+				code = http.StatusForbidden
+			default:
+				code = http.StatusInternalServerError
+			}
+			http.Error(writer, http.StatusText(code), code)
+		}
 	}
-	defer conn.Close()
-
-	// Send the HTTPS request to the remote server
-	r.Write(conn)
-
-	// Read the HTTPS response from the remote server
-	resp, err := http.ReadResponse(bufio.NewReader(conn), r)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	defer resp.Body.Close()
-
-	// Read the response body
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	// Modify the response body to add the MAC address
-	mac := getMAC()
-	newBody := strings.Replace(string(body), "Hello, world!", fmt.Sprintf("https B mac地址是：%s", mac), -1)
-
-	// Set the modified response body and headers
-	w.Write([]byte(newBody))
-	w.Header().Set("Content-Type", "text/plain")
-	w.Header().Set("X-Proxy-Server", "GoProxy")
-
-	// Log the request and response
-	fmt.Printf("%s %s\n", r.Method, r.URL.Path)
-	fmt.Println(resp.Status)
 }
 
 func main() {
-	// Listen on port 8855 for HTTP requests
-	http.HandleFunc("/55/", connectServer)
-
-	err := http.ListenAndServe(":8855", nil)
-	if err != nil {
-		panic(err)
+	// 第一个 HTTP 服务器
+	mux1 := http.NewServeMux()
+	mux1.HandleFunc("/", errWrapper(hand.ConnectServer))
+	server1 := &http.Server{
+		Addr:    ":8855",
+		Handler: mux1,
 	}
 
-	// Listen on port 8854 for HTTPS requests
-	//http.HandleFunc("/54/", getMacAddrForHttps)
-
-	// Listen on port 8855 and 8854 for HTTP and HTTPS requests, respectively
-	//err2 := http.ListenAndServeTLS(":8854", "server.crt", "server.key", nil)
-	//if err2 != nil {
-	//	panic(err2)
-	//}
-}
-
-// getMAC returns the MAC address of the first network interface on the local machine
-func getMAC() string {
-	interfaces, err := net.Interfaces()
-	if err != nil {
-		panic(err)
+	// 第二个 HTTP 服务器
+	mux2 := http.NewServeMux()
+	mux2.HandleFunc("/", errWrapper(hand.ConnectServerForHttps))
+	server2 := &http.Server{
+		Addr:    ":8854",
+		Handler: mux2,
 	}
-	for _, i := range interfaces {
-		addrs, err := i.Addrs()
-		if err != nil {
-			panic(err)
-		}
-		for _, addr := range addrs {
-			if ipnet, ok := addr.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
-				hwaddr := i.HardwareAddr
-				return hwaddr.String()
-			}
-		}
-	}
-	return ""
+
+	// 启动两个服务器
+	go server1.ListenAndServe()
+	go server2.ListenAndServeTLS("server.crt", "server.key")
+
+	// 防止程序退出
+	select {}
 }
