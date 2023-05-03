@@ -23,7 +23,7 @@ type TreeNode struct {
 	Left, Right *TreeNode
 }
 
-/**print
+/**Print
 ** @Description: 类似于treeNode的一个函数
 ** @receiver node
 **/
@@ -31,7 +31,7 @@ func (node TreeNode) Print() {
 	fmt.Print(node.Value, "\n")
 }
 
-/**createNode
+/**CreateNode
 ** @Description: 有时候结构体确实需要构造函数，那么这时候通过创建一个函数去实现.注意这里返回的是函数内部（也就是局部）变量的一个地址，但是对于go语言来说，不影响外部变量的使用。
 ** @param value
 ** @return *TreeNode
