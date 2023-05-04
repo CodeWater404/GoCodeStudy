@@ -4,6 +4,7 @@ import (
 	"learngo/errhanding/filelistingserver/filelisting"
 	"log"
 	"net/http"
+	_ "net/http/pprof"
 	"os"
 )
 
@@ -12,6 +13,12 @@ import (
   @since: 2023/4/16
   @desc: 服务器统一错误处理示例:
 		defer + panic +recover
+	PS: add library: _ "net/http/pprof"
+		1. can access this address:http://localhost:8888/debug/pprof/
+		2. can use this command: go tool pprof http://localhost:8888/debug/pprof/profile
+		to look at the cpu information for 30 seconds
+	(see library file comments for more information)
+
 **/
 
 type appHandler func(writer http.ResponseWriter, request *http.Request) error
