@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>gin_demo_index</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="/static/js/common.js"></script>
+</head>
+<body>
+    <h1>hello gin frame!!!</h1>
+    获取的后端数据为：
+    {{.msg}}
+
+<!--处理表单数据-->
+    <form action="/user/add" method="post">
+        <p>username:<input type="text" name="username"></p>
+        <p>password:<input type="text" name="password"></p>
+        <button type="submit" >提交</button>
+    </form>
+</body>
+</html>
