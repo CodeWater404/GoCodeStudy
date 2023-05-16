@@ -1,0 +1,10 @@
+<h1>Hello world</h1>
+<h2>hhhhhhhhh</h2>
+<img id='i1' src='https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRg3bgWkk7nJVTwxayPcf5F8m4gV1XNz-keNlDEXnTauGV7IrKrLb0JctjOvTOxQD55FB4&usqp=CAU'>
+<button id='b1'>点击</button>
+
+<script>
+document.getElementById('b1').onclick=function(){
+    document.getElementById('i1').src='https://up.tt98.com/edpic/20/ce/b0/20ceb00d9f3479726720bed3ae0d3d83.jpg'
+}
+</script>
