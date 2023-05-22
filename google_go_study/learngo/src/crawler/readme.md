@@ -21,3 +21,8 @@
 1. 先下载gopm（一个 Go 包管理工具，用于管理 Go 项目的依赖。）：`go get -u github.com/gpmgo/gopm
    `
 2. 用`gopm`下载`text`包：`gopm get -g -v golang.org/x/text`
+3. 如果安装`gopm`失败（`todo`），可以先用go get下载安装`go get golang.org/x/text`；后续再尝试解决。
+4. 自动检测网页编码的包：`gopm get -g -v golang.org/x/net/html`
+
+## 获取城市和链接
+![img_7.png](img_7.png)
