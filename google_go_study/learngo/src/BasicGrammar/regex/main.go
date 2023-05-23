@@ -8,7 +8,7 @@ import (
 /**
   @author: CodeWater
   @since: 2023/5/22
-  @desc: 正则表达式
+  @desc: 正则表达式：提取邮箱的小安列
 **/
 
 const text = `

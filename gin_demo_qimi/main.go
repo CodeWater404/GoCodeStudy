@@ -1,28 +1,46 @@
 package main
 
-import (
-	"fmt"
-	"io/ioutil"
-	"net/http"
-)
+import "github.com/gin-gonic/gin"
 
 /**
   @author: CodeWater
   @since: 2023/5/15
-  @desc: $
+  @desc: gin框架的入门使用
 **/
 
-func sayHello(w http.ResponseWriter, r *http.Request) {
-	b, _ := ioutil.ReadFile("./hello.txt")
-	_, _ = fmt.Fprintln(w, string(b))
+func sayHello(c *gin.Context) {
+	c.JSON(200, gin.H{
+		"message": "Hello golang!",
+	})
 }
 
 func main() {
-	http.HandleFunc("/hello", sayHello)
-	err := http.ListenAndServe(":9090", nil)
-	if err != nil {
-		fmt.Printf("http server failed , err: %v\n", err)
-		return
-	}
+	//返回默认的路由引擎
+	r := gin.Default()
 
+	r.GET("/hello", sayHello)
+
+	//some simple example for restful
+	r.GET("/book", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"method": "GET",
+		})
+	})
+	r.POST("/book", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"method": "POST",
+		})
+	})
+	r.PUT("/book", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"method": "PUT",
+		})
+	})
+	r.DELETE("/book", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"method": "DELETE",
+		})
+	})
+
+	r.Run(":9090")
 }
