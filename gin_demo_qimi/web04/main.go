@@ -9,7 +9,7 @@ import (
 /**
   @author: CodeWater
   @since: 2023/5/23
-  @desc: go原生——模板文件渲染
+  @desc: go原生——模板文件渲染(了解)
 **/
 
 func sayHello(w http.ResponseWriter, r *http.Request) {
