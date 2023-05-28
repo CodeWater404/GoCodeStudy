@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <title>Hello</title>
+    </head>
+    <body>
+        {{/*结构体的渲染*/}}
+        <p>Hello , {{ .u1.Name }}</p>
+        <p>age:{{.u1.Age}}</p>
+        <p>gender:{{.u1.Gender}}</p>
+        <hr/>
+        <p>{{.m1.Name}}</p>
+        <p>{{.m1.Age}}</p>
+        <p>{{.m1.Gender}}</p>
+        <hr/>
+{{/*        变量*/}}
+        {{$v1 := 100}}
+        {{$age := .m1.Age}}
+        aaaaaaaaaaaaaaaaaaaaaaaa
+        <hr/>
+{{/*    判断语句*/}}
+        {{if $v1}}
+        {{ $v1}}
+        {{else}}
+            啥都没有
+        {{end}}
+        <hr/>
+{{/*    比较符号：lt小于*/}}
+        {{if lt .m1.Age 22}}
+        好好上学
+        {{else}}
+        好好工作
+        {{end}}
+    <hr/>
+{{/*  range 遍历  */}}
+        {{range $idx , $hobby := .m1.hobby}}
+            <p>{{$idx}} ----- {{$hobby}}</p>
+        {{else}}
+            没啥爱好
+        {{end}}
+    <hr/>
+{{/*    with: 省略一些共有前缀*/}}
+    <p>with: m1</p>
+    {{with .m1}}
+    <p>{{.Name}}</p>
+    <p>{{.Age}}</p>
+    <p>{{.Gender}}</p>
+    {{end}}
+    <hr/>
+{{/*    index： 直接索引到数组的中某个值*/}}
+    {{index .m1.hobby 2}}
+    </body>
+</html>

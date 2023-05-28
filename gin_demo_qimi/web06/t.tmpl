@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <title>嵌套模板文件</title>
+    </head>
+    <body>
+        <h1>测试嵌套template语法</h1>
+        <hr>
+{{/*        外部文件定义的*/}}
+        {{template "ul.tmpl"}}
+        <hr>
+        {{template "ol.tmpl"}}
+    </body>
+</html>
+
+{{/*define 定义的模板文件*/}}
+{{define "ol.tmpl"}}
+    <ol>
+        <li>eat</li>
+        <li>sleep</li>
+        <li>movement</li>
+    </ol>
+{{end}}
