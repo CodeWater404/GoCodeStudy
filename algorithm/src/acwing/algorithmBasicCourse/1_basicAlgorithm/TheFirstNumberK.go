@@ -11,12 +11,12 @@ import (
 /**
   @author: CodeWater
   @since: 2023/5/28
-  @desc: $
+  @desc: PS： 注意，同一个包下面在不同的go文件中声明了相同的函数名称会报错，这里就不统一修改了。
 **/
 
 const N = int(1e5) + 10
 
-/*PS
+/*PS：注意数组和切片的区别
 1. var q = [N]int{}数组类型
 2，var q = make([]int , N)切片类型,指定了切片的长度为 N。
 
