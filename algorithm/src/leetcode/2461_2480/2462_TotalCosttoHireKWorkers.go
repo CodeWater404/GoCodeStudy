@@ -8,7 +8,7 @@ import (
 /**
   @author: CodeWater
   @since: 2023/5/29
-  @desc:
+  @desc:雇佣 K 位工人的总代价
 **/
 func totalCost(costs []int, k, candidates int) int64 {
 	ans := 0
