@@ -1,0 +1,7 @@
+{{/*继承模板   后面一个点表示接收go传过来的变量*/}}
+{{template "base.tmpl" .}}
+{{/*重新定义模板block区域 , define后面那里要和夫模板那里的定义的一个名*/}}
+{{define "content"}}
+    <h1> 这是index2页面</h1>
+    <p>Hello {{.}}</p>
+{{end}}
