@@ -30,6 +30,7 @@ func main() {
 	}
 	defer db.Close()
 
+	//把结构体和数据表相对应
 	db.AutoMigrate(&User{})
 
 	u1 := User{Name: "code", Age: 19, Active: true}
@@ -51,6 +52,7 @@ func main() {
 	DeletedAt *time.Time `sql:"index"`
 	*/
 	db.Debug().Model(&user).Update("name", "c22222")
+	//UPDATE `users` SET `name` = 'c22222', `updated_at` = '2023-06-06 02:27:31'  WHERE `users`.`deleted_at` IS NULL AND `users`.`id` = 1
 
 	m1 := map[string]interface{}{
 		"name":   "c3333",
