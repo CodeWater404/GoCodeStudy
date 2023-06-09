@@ -45,6 +45,7 @@ func (c *sayHelloClient) SayHello(ctx context.Context, in *HelloRequest, opts ..
 	if err != nil {
 		return nil, err
 	}
+													//这里写业务逻辑,
 	return out, nil
 }
 
