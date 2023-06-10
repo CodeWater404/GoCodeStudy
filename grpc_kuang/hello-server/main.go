@@ -24,8 +24,16 @@ func (s *server) SayHello(ctx context.Context, req *pb.HelloRequest) (*pb.HelloR
 }
 
 func main() {
+	//todo：生成文件失败
+	//tls认证
+	//creds, _ := credentials.NewServerTLSFromFile("F:\\Code\\GoCode\\grpc_kuang\\key\\test.pem" , "F:\\Code\\GoCode\\grpc_kuang\\key\\test.key")
+
 	//开启端口
 	listen, _ := net.Listen("tcp", "127.0.0.1:9090")
+
+	//tls
+	//grpcServer := grpc.NewServer(grpc.Creds(creds))
+
 	//创建grpc服务
 	grpcServer := grpc.NewServer()
 	//注册服务

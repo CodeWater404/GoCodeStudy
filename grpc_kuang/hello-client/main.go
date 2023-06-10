@@ -15,6 +15,11 @@ import (
 **/
 
 func main() {
+	//tls
+	//creds , _ := credentials.NewClientTLSFromFile("" , "*.codewater.com")
+
+	//conn, err := grpc.Dial("127.0.0.1:9090", grpc.WithTransportCredentials(creds))
+
 	//连接到远程，这里没有加密
 	conn, err := grpc.Dial("127.0.0.1:9090", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
