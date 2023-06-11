@@ -5,9 +5,10 @@ package offer
   @since: 2023/6/9
   @desc: 反转链表
 **/
-/**
-* Definition for singly-linked list.
- */
+
+// ListNode
+//  @Description: Definition for singly-linked list.
+//
 type ListNode struct {
 	Val  int
 	Next *ListNode
