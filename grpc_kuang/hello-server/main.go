@@ -2,7 +2,10 @@ package main
 
 import (
 	"context"
+	"errors"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
 	pb "grpc_kuang/hello-server/proto"
 	"log"
 	"net"
@@ -19,8 +22,27 @@ type server struct {
 }
 
 func (s *server) SayHello(ctx context.Context, req *pb.HelloRequest) (*pb.HelloResponse, error) {
+	//token认证的
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return nil, errors.New("未传输token")
+	}
+	var appid string
+	var appkey string
+	if v, ok := md["appid"]; ok {
+		appid = v[0]
+	}
+	if v, ok := md["appkey"]; ok {
+		appkey = v[0]
+	}
+
+	//一些校验逻辑
+	if appid != "code" || appkey != "123" {
+		return nil, errors.New("token error")
+	}
+
 	log.Printf("server received: %v\n", req.RequestName)
-	return &pb.HelloResponse{ResponseMsg: "hello" + req.RequestName}, nil
+	return &pb.HelloResponse{ResponseMsg: "hello " + req.RequestName}, nil
 }
 
 func main() {
@@ -31,11 +53,14 @@ func main() {
 	//开启端口
 	listen, _ := net.Listen("tcp", "127.0.0.1:9090")
 
-	//tls
+	//1.tls
 	//grpcServer := grpc.NewServer(grpc.Creds(creds))
 
-	//创建grpc服务
-	grpcServer := grpc.NewServer()
+	//2. token
+	grpcServer := grpc.NewServer(grpc.Creds(insecure.NewCredentials()))
+
+	//0.创建grpc服务(没有认证的)
+	//grpcServer := grpc.NewServer()
 	//注册服务
 	pb.RegisterSayHelloServer(grpcServer, &server{})
 

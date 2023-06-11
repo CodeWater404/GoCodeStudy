@@ -45,6 +45,9 @@ protoc --go-grpc_out=. hello.proto
 ![img_1.png](img_1.png)
 ![img_2.png](img_2.png)
 简单来说就是安装openssl的安装包，然后添加到环境变量中去，最后用命令行来生成指定的密钥文件
+官网下载需要编译才行，这里直接用别人已经弄好的安装包：
+https://slproweb.com/products/Win32OpenSSL.html
+
 ```
 //生成私钥
 openssl genrsa -out server.key 2048
@@ -59,7 +62,7 @@ openssl req -new -key server.key -out server.csr
 //1)复制一份你安装的openssl的bin目录里面的openssl.cnf文件到你项目所在的目录
 //2)找到[CA_default],打开copy_extensions = copy(就是把前面的#去掉)
 //3)找到[req].打开req_extensions = v3_req  #The extensions to add to a certificate request
-//4)找到[v3_req],添加subjectAltName = @alt-names
+//4)找到[v3_req],添加subjectAltName = @alt_names
 //5〉添加新的标兹[alt_names],和标签字段
 DNS.1 = *.codewater.com
 
@@ -67,8 +70,7 @@ DNS.1 = *.codewater.com
 openssl genpkey -algorithm RSA -out test.key
 
 //通过私钥test.key生成证书请求文件test.csr(注意cfg和cnf)
-openssl req -new -nodes -key test.key -out test.csr -days 3650 -subj "/C=cn/OU=myorg/O=mycomp/CN=myname" -config
-./openssl.cnf -extensions v3_req
+openssl req -new -nodes -key test.key -out test.csr -days 3650 -subj "/C=cn/OU=myorg/O=mycomp/CN=myname" -config ./openssl.cfg -extensions v3_req
 //test.csr是上面生成的证书请求文件，ca.crt/server.key是CA证书文件和key,用来对test.csr进行签名认证，这两个义件在第一部分生成。
 
 //生成SAN证书 pem
