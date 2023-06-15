@@ -5,7 +5,9 @@ package offer
   @since: 2023/6/14
   @desc: 滑动窗口的最大值
 **/
-func maxSlidingWindow(nums []int, k int) []int {
+
+//method a================================================================
+func maxSlidingWindow1(nums []int, k int) []int {
 	//q优先队列，这里存储顺序是递减的
 	q := []int{}
 	//push函数，始终保持q存储的正确性，另外存储的是下标
@@ -37,4 +39,34 @@ func maxSlidingWindow(nums []int, k int) []int {
 		ans = append(ans, nums[q[0]])
 	}
 	return ans
+}
+
+//method b================================================================
+//优先队列，简洁版
+func maxSlidingWindow2(nums []int, k int) []int {
+	length, hh, tt := len(nums), 0, -1
+	if length == 0 {
+		return []int{0}
+	}
+	//q优先队列：保持数值递减，但是实际存储的是数值在数组中的下标； res存储答案
+	q, res := make([]int, length), make([]int, length-k+1)
+
+	for i := 0; i < length; i++ {
+		//q队列有元素并且队头不在窗口范围内，删除队头
+		if hh <= tt && q[hh] < i-k+1 {
+			hh++
+		}
+		//队列有元素并且队尾表示的元素值小于当前遍历的数组值，删除队尾
+		for hh <= tt && nums[q[tt]] <= nums[i] {
+			tt--
+		}
+		//优先队列队尾加入元素
+		tt++
+		q[tt] = i
+		//遍历的下标超过窗口表示的范围，把res表示的下标处理一下
+		if i >= k-1 {
+			res[i-k+1] = nums[q[hh]]
+		}
+	}
+	return res
 }
