@@ -7,6 +7,17 @@ import "fmt"
   @since: 2023/7/16
   @desc: 工厂方法模式：在简单工厂模式基础上，把工厂再抽象一层，符合开闭原则！！！！
 		也可以说： 简单工厂 + 开闭原则 = 工厂方法
+	优点：
+		1. 不需要记住具体类名，甚至连具体参数都不用记忆。
+		2. 实现了对象创建和使用的分离。
+		3. 系统的可扩展性也就变得非常好，无需修改接口和原类。
+		4.对于新产品的创建，符合开闭原则。
+	缺点：
+		1. 增加系统中类的个数，复杂度和理解度增加。
+		2. 增加了系统的抽象性和理解难度。
+	适用场景：
+		1. 客户端不知道它所需要的对象的类。
+		2. 抽象工厂类通过其子类来指
 
 	例子： 工厂会生产出不同的水果，业务层只需要跟工厂交互，不需要自己去创建具体的水果
 **/
@@ -48,11 +59,11 @@ func (a *Pear2) Show() {
 }
 
 //=================新增一个水果种类
-type JapanPear struct {
+type JapanPear1 struct {
 	Fruit2
 }
 
-func (jp *JapanPear) Show() {
+func (jp *JapanPear1) Show() {
 	fmt.Println("我是日本的梨。。。。")
 }
 
@@ -90,13 +101,13 @@ func (pf *PearFactory) CreateFruit() Fruit2 {
 }
 
 //=============新增的一种水果
-type JapanPearFactory struct {
+type JapanPear1Factory struct {
 	AbstractFactory
 }
 
-func (jpf *JapanPearFactory) CreateFruit() Fruit2 {
+func (jpf *JapanPear1Factory) CreateFruit() Fruit2 {
 	var fruit Fruit2
-	fruit = new(JapanPear)
+	fruit = new(JapanPear1)
 	return fruit
 }
 
@@ -124,7 +135,7 @@ func main() {
 
 	//如果现在相应新增加一个日本的梨，那么只需要整对应的具体水果、生产水果的抽象工厂
 	var japanPearFac AbstractFactory
-	japanPearFac = new(JapanPearFactory)
+	japanPearFac = new(JapanPear1Factory)
 	var japanPear Fruit2
 	japanPear = japanPearFac.CreateFruit()
 	japanPear.Show()
