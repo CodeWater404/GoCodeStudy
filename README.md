@@ -17,12 +17,17 @@ The way of learning to go language.
 1. gin-vue-admin
 
 # catalogue introduction
-|-- ─ Gin_demo: learn gin(kuangshen):https://www.bilibili.com/video/BV1fA411F7aM/?spm_id_from=333.337.search-card.all.click&vd_source=428d32ac5556a6a38659408b8c8fb403
-|-- ─ LICENSE
-|-- ─ NetTest: an interview question
-|-- ─ README.md
-|-- ─ githubExercise
-`-- ─ google_go_study:learn the basic grammer of go
+```text
+|-- ─ Gin_demo            learn gin(kuangshen)
+|-- ─ LICENSE             
+|-- ─ NetTest             a interview question
+|-- ─ algorithm           algorithm study:acwing 、leetcode
+|-- ─ designPattern       study design pattern
+|-- ─ gin_demo_qimi       study gin 
+|-- ─ google_go_study     learn the basic grammer of go
+|-- ─ grpc_kuang          study grpc
+`-- ─ readme.md           
+```
 
 # some common commands
 1. `go env`: list the environment variables for go
