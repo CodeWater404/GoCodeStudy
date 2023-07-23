@@ -26,7 +26,7 @@ EXPIRE pipeline_counts 3600
 */
 func pipelineDemo() {
 
-	//1。
+	//1。pipeline 需要调exec
 	//pipe := op.Rdb.Pipeline()
 	//incr := pipe.Incr(ctx, "pipeline_counter")
 	//pipe.Expire(ctx, "pipeline_counter", time.Hour)
@@ -37,7 +37,7 @@ func pipelineDemo() {
 
 	cmds, err := op.Rdb.Pipelined(ctx, func(pipe redis.Pipeliner) error {
 		incr = pipe.Incr(ctx, "pipelined_counter")
-		pipe.Expire(ctx, "pipeline_counter", time.Hour)
+		pipe.Expire(ctx, "pipelined_counter", time.Hour)
 		return nil
 	})
 
@@ -59,6 +59,7 @@ func pipelineDemo() {
 func pipelineDemo2() {
 	cmds, err := op.Rdb.Pipelined(ctx, func(pipe redis.Pipeliner) error {
 		for i := 0; i < 100; i++ {
+			pipe.Set(ctx, fmt.Sprintf("key%d", i), i, 0*time.Second)
 			pipe.Get(ctx, fmt.Sprintf("key%d", i))
 		}
 		return nil
