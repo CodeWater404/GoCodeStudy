@@ -15,10 +15,13 @@ bilibili狂神说的grpc教程，仅作为学习参考。
 4. 在编写代码时，如果没有相关高亮显示，需要安装插件，直接搜索protoc
 
 # 生成go、rpc代码
+1. `hello.proto`是定义grpc服务、参数、返回的文件；下面两条是执行下面命令后产生的文件。
+2. `hello_grpc.pb.go`里面就是接口服务的逻辑
+3. `hello.pb.go`里面是参数和返回值的结构体定义
 ```
-//注意proto文件的位置
-protoc --go_out=. hello.proto
-protoc --go-grpc_out=. hello.proto
+//注意proto文件的位置；点表示在当前位置生成
+protoc --go_out=. hello.proto //生成go语言文件，对应的是hello.pb.go
+protoc --go-grpc_out=. hello.proto  //生成grpc文件，对应hello_grpc.pb.go
 ```
 
 # 代码编写基本流程
