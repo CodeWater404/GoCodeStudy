@@ -8,6 +8,7 @@ import "fmt"
   @desc: 高精度减法
 **/
 
+//比较两个数谁大，大的返回true。
 func cmp(a, b []int) bool {
 	if len(a) != len(b) {
 		return len(a) > len(b)
@@ -17,17 +18,21 @@ func cmp(a, b []int) bool {
 			return a[i] > b[i]
 		}
 	}
+	//走到这里，说明一样大
 	return true
 }
 
 func sub(a, b []int) []int {
 	var c []int
 	for i, t := 0, 0; i < len(a); i++ {
+		//t表示进位
 		t = a[i] - t
 		if i < len(b) {
 			t -= b[i]
 		}
+		//到这里，a-b就减完了。
 		c = append(c, (t+10)%10)
+		//这里判断a-b的时候是不是用到了上一位，如果t<0说明借位了，把负的变成1，这样下一轮的时候a就会减掉借位的
 		if t < 0 {
 			t = 1
 		} else {
