@@ -56,3 +56,27 @@ func merge2(nums1 []int, m int, nums2 []int, n int) {
 	copy(nums1[m:], nums2)
 	sort.Ints(nums1)
 }
+
+//=======================Third method=========================
+//有序，直接从尾部扫描往nums1比较添加。
+//三个变量标记两个数组以及合并数组的尾部，最后只需要判断nums2是否还有剩余，因为nums1还有剩余也是在结果数组中。
+func merge3(nums1 []int, m int, nums2 []int, n int) {
+	k, i, j := m+n-1, m-1, n-1
+	for i >= 0 && j >= 0 {
+		if nums1[i] >= nums2[j] {
+			nums1[k] = nums1[i]
+			k--
+			i--
+		} else {
+			nums1[k] = nums2[j]
+			k--
+			j--
+		}
+	}
+	for j >= 0 {
+		nums1[k] = nums2[j]
+		j--
+		k--
+	}
+
+}
