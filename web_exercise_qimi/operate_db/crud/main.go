@@ -50,6 +50,7 @@ type user struct {
 	name string
 }
 
+//queryRowDemo 查询单条数据
 func queryRowDemo() {
 	sqlStr := "select id , name , age from user where id = ?"
 	var u user
@@ -66,13 +67,35 @@ func queryRowDemo() {
 	fmt.Printf("====>func queryRowDemo,id:%v , name:%v , age:%v\n", u.id, u.name, u.age)
 }
 
+//queryMultiRowDemo 查询多条数据
+func queryMultiRowDemo() {
+	sqlStr := "select id , name , age from user where id > ?"
+	rows, err := db.Query(sqlStr, 0)
+	if err != nil {
+		fmt.Printf("query multi data failed , err:%v\n", err)
+		return
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var u user
+		err := rows.Scan(&u.id, &u.name, &u.age)
+		if err != nil {
+			fmt.Printf("query multi scan failed , err:%v\n", err)
+			return
+		}
+		fmt.Printf("query multi id:%v , name:%v , age:%v\n", u.id, u.name, u.age)
+	}
+}
+
 func main() {
 	err := initDB()
 	if err != nil {
 		fmt.Printf("db connect fail: %v\n", err)
 	}
 	defer db.Close()
-	fmt.Println("db connecnt success!")
+	fmt.Println("db connect success!")
 	fmt.Println("==========================================================")
-	queryRowDemo()
+	//queryRowDemo()
+	queryMultiRowDemo()
 }
