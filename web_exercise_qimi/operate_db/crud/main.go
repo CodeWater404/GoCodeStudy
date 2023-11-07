@@ -136,6 +136,36 @@ func deleteRowDemo() {
 	fmt.Printf("delete success , affected rows:%v\n", n)
 }
 
+/*prepareQueryDemo 预处理查询
+先发送sql语句给mysql，然后再发送数据；之前的操作都是先把占位符替换掉然后发送sql直接执行。
+场景：
+优化MySQL服务器重复执行SQL的方法，可以提升服务器性能，提前让服务器编译，一次编译多次执行，节省后续编译的成本。
+避免SQL注入问题。
+*/
+func prepareQueryDemo() {
+	sqlStr := "select id , name , age from user where id > ?"
+	ret, err := db.Prepare(sqlStr)
+	if err != nil {
+		fmt.Printf("db prepare failed , err:%v\n", err)
+		return
+	}
+	defer ret.Close()
+	rows, err := ret.Query(0)
+	if err != nil {
+		fmt.Printf("prepare query failed , err:%v\n", err)
+		return
+	}
+	for rows.Next() {
+		var u user
+		err := rows.Scan(&u.id, &u.name, &u.age)
+		if err != nil {
+			fmt.Printf("prepare scan failed , err:%v\n", err)
+			return
+		}
+		fmt.Printf("id:%d , name:%s , age:%d\n", u.id, u.name, u.age)
+	}
+}
+
 func main() {
 	err := initDB()
 	if err != nil {
@@ -148,5 +178,6 @@ func main() {
 	//queryMultiRowDemo()
 	//insertRowDemo()
 	//updateRowDemo()
-	deleteRowDemo()
+	//deleteRowDemo()
+	prepareQueryDemo()
 }
