@@ -88,6 +88,7 @@ func queryMultiRowDemo() {
 	}
 }
 
+//insertRowDemo 差入单条数据
 func insertRowDemo() {
 	sqlStr := "insert into user(name , age) values(? , ?)"
 	ret, err := db.Exec(sqlStr, "water", 22)
@@ -103,6 +104,22 @@ func insertRowDemo() {
 	fmt.Printf("insert success , the id is %d\n", theId)
 }
 
+//updateRowDemo 更新一条数据
+func updateRowDemo() {
+	sqlStr := "update user set age=? where id = ?"
+	ret, err := db.Exec(sqlStr, 30, 3)
+	if err != nil {
+		fmt.Printf("update failed , err:%v\n", err)
+		return
+	}
+	n, err := ret.RowsAffected()
+	if err != nil {
+		fmt.Printf("get RowsAffected failed , err:%v\n", err)
+		return
+	}
+	fmt.Printf("udpate success , affected rows:%v\n", n)
+}
+
 func main() {
 	err := initDB()
 	if err != nil {
@@ -113,5 +130,7 @@ func main() {
 	fmt.Println("==========================================================")
 	//queryRowDemo()
 	//queryMultiRowDemo()
-	insertRowDemo()
+	//insertRowDemo()
+	updateRowDemo()
+
 }
