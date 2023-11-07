@@ -168,6 +168,56 @@ func namedQuery() {
 	}
 }
 
+//transactionDemo 事务例子
+func transactionDemo() (err error) {
+	tx, err := db.Beginx()
+	if err != nil {
+		fmt.Printf("begin trans failed , err:%v\n", err)
+		return err
+	}
+	//最后对err做处理
+	defer func() {
+		if p := recover(); p != nil {
+			tx.Rollback()
+			panic(p)
+		} else if err != nil {
+			fmt.Printf("rollback")
+			tx.Rollback()
+		} else {
+			err = tx.Commit()
+			fmt.Println("commit")
+		}
+	}()
+
+	sqlStr1 := "update user set age=20 where id = ?"
+	rs, err := tx.Exec(sqlStr1, 7)
+	if err != nil {
+		return err
+	}
+	n, err := rs.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n != 1 {
+		return errors.New("exec sqlStr1 failed")
+	}
+
+	sqlStr2 := "update user set age=50 where id = ?"
+	rs, err = tx.Exec(sqlStr2, 5)
+	if err != nil {
+		return err
+	}
+	n, err = rs.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n != 1 {
+		return errors.New("exec sqlStr2 failed")
+	}
+	return err
+
+}
+
 func main() {
 	if err := initDB(); err != nil {
 		fmt.Printf("init db failed , err:%v\n", err)
@@ -186,5 +236,10 @@ func main() {
 	//}else {
 	//	fmt.Printf("insert success")
 	//}
-	namedQuery()
+	//namedQuery()
+	if err := transactionDemo(); err != nil {
+		fmt.Printf("trans failed , err:%v\n", err)
+	} else {
+		fmt.Printf("trans success")
+	}
 }
