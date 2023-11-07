@@ -188,6 +188,55 @@ func prepareInsertDemo() {
 	fmt.Println("prepare insert success")
 }
 
+//transactionDemo 模拟事务
+func transactionDemo() {
+	tx, err := db.Begin()
+	if err != nil {
+		if tx != nil {
+			tx.Rollback()
+		}
+		fmt.Printf("begin trans failed , err:%v\n", err)
+		return
+	}
+	sqlStr1 := "Update user set age=30 where id = ?"
+	ret1, err := tx.Exec(sqlStr1, 2)
+	if err != nil {
+		tx.Rollback()
+		fmt.Printf("exec sql1 failed , err:%v\n", err)
+		return
+	}
+	affRow1, err := ret1.RowsAffected()
+	if err != nil {
+		tx.Rollback()
+		fmt.Printf("exec ret1.RowAffected() failed , err:%v\n", err)
+		return
+	}
+	sqlStr2 := "Update user set age=40 where id = ?"
+	ret2, err := tx.Exec(sqlStr2, 4)
+	if err != nil {
+		tx.Rollback()
+		fmt.Printf("exec sql2 failed , err:%v\n", err)
+		return
+	}
+	affRow2, err := ret2.RowsAffected()
+	if err != nil {
+		tx.Rollback()
+		fmt.Printf("exec ret2.RowsAffected failed , err:%v\n", err)
+		return
+	}
+	fmt.Println(affRow1, affRow2)
+
+	if affRow1 == 1 && affRow2 == 1 {
+		fmt.Println("commit transaction!")
+		tx.Commit()
+	} else {
+		tx.Rollback()
+		fmt.Println("rollback transaction ...")
+	}
+	fmt.Println("exec trans success!!")
+
+}
+
 func main() {
 	err := initDB()
 	if err != nil {
@@ -202,5 +251,6 @@ func main() {
 	//updateRowDemo()
 	//deleteRowDemo()
 	//prepareQueryDemo()
-	prepareInsertDemo()
+	//prepareInsertDemo()
+	transactionDemo()
 }
