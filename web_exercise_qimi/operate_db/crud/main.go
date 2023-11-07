@@ -88,6 +88,21 @@ func queryMultiRowDemo() {
 	}
 }
 
+func insertRowDemo() {
+	sqlStr := "insert into user(name , age) values(? , ?)"
+	ret, err := db.Exec(sqlStr, "water", 22)
+	if err != nil {
+		fmt.Printf("insert failed , err:%v\n", err)
+		return
+	}
+	theId, err := ret.LastInsertId()
+	if err != nil {
+		fmt.Printf("get lastinsert id failed , err:%v\n", err)
+		return
+	}
+	fmt.Printf("insert success , the id is %d\n", theId)
+}
+
 func main() {
 	err := initDB()
 	if err != nil {
@@ -97,5 +112,6 @@ func main() {
 	fmt.Println("db connect success!")
 	fmt.Println("==========================================================")
 	//queryRowDemo()
-	queryMultiRowDemo()
+	//queryMultiRowDemo()
+	insertRowDemo()
 }
