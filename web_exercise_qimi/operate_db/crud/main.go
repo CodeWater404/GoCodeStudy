@@ -166,6 +166,28 @@ func prepareQueryDemo() {
 	}
 }
 
+//prepareInsertDemo 预处理差入多条数据
+func prepareInsertDemo() {
+	sqlStr := "insert into user(name , age) values(? , ?)"
+	ret, err := db.Prepare(sqlStr)
+	if err != nil {
+		fmt.Printf("db prepare failed , err:%v\n", err)
+		return
+	}
+	defer ret.Close()
+	_, err = ret.Exec("water", 22)
+	if err != nil {
+		fmt.Printf("prepare 1 insert failed , err:%v\n", err)
+		return
+	}
+	_, err = ret.Exec("lion", 25)
+	if err != nil {
+		fmt.Printf("prepare 2 insert failed , err:%v\n", err)
+		return
+	}
+	fmt.Println("prepare insert success")
+}
+
 func main() {
 	err := initDB()
 	if err != nil {
@@ -179,5 +201,6 @@ func main() {
 	//insertRowDemo()
 	//updateRowDemo()
 	//deleteRowDemo()
-	prepareQueryDemo()
+	//prepareQueryDemo()
+	prepareInsertDemo()
 }
