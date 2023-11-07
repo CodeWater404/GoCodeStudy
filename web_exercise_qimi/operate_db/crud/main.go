@@ -120,6 +120,22 @@ func updateRowDemo() {
 	fmt.Printf("udpate success , affected rows:%v\n", n)
 }
 
+//deleteRowDemo 删除单条数据
+func deleteRowDemo() {
+	sqlStr := "delete from user where id = ?"
+	ret, err := db.Exec(sqlStr, 3)
+	if err != nil {
+		fmt.Printf("delete failed, err:%v\n", err)
+		return
+	}
+	n, err := ret.RowsAffected()
+	if err != nil {
+		fmt.Printf("get RowsAffected failed , err:%v\n", err)
+		return
+	}
+	fmt.Printf("delete success , affected rows:%v\n", n)
+}
+
 func main() {
 	err := initDB()
 	if err != nil {
@@ -131,6 +147,6 @@ func main() {
 	//queryRowDemo()
 	//queryMultiRowDemo()
 	//insertRowDemo()
-	updateRowDemo()
-
+	//updateRowDemo()
+	deleteRowDemo()
 }
