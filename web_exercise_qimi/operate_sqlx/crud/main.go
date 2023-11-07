@@ -37,10 +37,43 @@ func initDB() (err error) {
 	return
 }
 
+type user struct {
+	//这里sqlx包用函数查询的时候采取的是反射，所以需要大写，让sqlx可以访问到；database那个包小写是因为指定赋值给指定的字段
+	ID   int    `db:"id"` //这里用tag是因为查询的db字段名称和struct这里的字段名字不一样
+	Name string `db:"name"`
+	Age  int    `db:"age"`
+}
+
+//queryRowDemo 查询单条数据
+func queryRowDemo() {
+	sqlStr := "select id , name , age from user where id = ?"
+	var u user
+	err := db.Get(&u, sqlStr, 1)
+	if err != nil {
+		fmt.Printf("get failed , err:%v\n", err)
+		return
+	}
+	fmt.Printf("id:%d , name:%s , age:%d\n", u.ID, u.Name, u.Age)
+}
+
+//queryMultiDemo 查询多条数据
+func queryMultiDemo() {
+	sqlStr := "select id , name , age from user where id > ?"
+	var users []user
+	err := db.Select(&users, sqlStr, 0)
+	if err != nil {
+		fmt.Printf("query select failed , err:%v\n", err)
+		return
+	}
+	fmt.Printf("users: %#v\n", users)
+
+}
 func main() {
 	if err := initDB(); err != nil {
 		fmt.Printf("init db failed , err:%v\n", err)
 		return
 	}
 	fmt.Printf("init db success")
+	//queryRowDemo()
+	queryMultiDemo()
 }
