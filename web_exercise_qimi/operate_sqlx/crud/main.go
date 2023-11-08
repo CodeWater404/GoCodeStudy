@@ -1,11 +1,13 @@
 package main
 
 import (
+	"database/sql/driver"
 	"errors"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"os"
+	"strings"
 )
 
 /**
@@ -218,6 +220,67 @@ func transactionDemo() (err error) {
 
 }
 
+//BatchInsertUsers 批量插入，手动拼接sql
+func BatchInsertUsers(users []*user) error {
+	valueString := make([]string, 0, len(users))
+	valueArgs := make([]interface{}, 0, len(users)*2)
+	for _, u := range users {
+		valueString = append(valueString, "(? , ?)")
+		valueArgs = append(valueArgs, u.Name)
+		valueArgs = append(valueArgs, u.Age)
+	}
+	stmt := fmt.Sprintf("insert into user (name , age) values %s", strings.Join(valueString, ","))
+	_, err := db.Exec(stmt, valueArgs...)
+	return err
+}
+
+/*Value 使用sqlx库实现批量插入，需要实现下面的value接口
+ */
+func (u user) Value() (driver.Value, error) {
+	return []interface{}{u.Name, u.Age}, nil
+}
+func BatchInsertUsers2(users []interface{}) error {
+	query, args, _ := sqlx.In(
+		"insert into user (name , age) values(?) , (?) , (?)", users...)
+	fmt.Println("batch insert2 sql:" + query)
+	fmt.Printf("batch insert2 args:%v\n", args)
+	_, err := db.Exec(query, args...)
+	return err
+}
+
+//BatchInsertUsers3 sqlx内置接口批量插入
+func BatchInsertUsers3(users []*user) error {
+	_, err := db.NamedExec("insert into user (name , age) values(:name , :age)", users)
+	return err
+}
+
+//QueryByIDs 批量查询
+func QueryByIDs(ids []int) (users []user, err error) {
+	query, args, err := sqlx.In("select id ,name , age from user where id in (?)", ids)
+	if err != nil {
+		return
+	}
+	//sqlx.In 返回带 `?` bindvar的查询语句, 我们使用Rebind()重新绑定它
+	query = db.Rebind(query)
+	err = db.Select(&users, query, args...)
+	return
+}
+
+//QueryAndOrderByIds 批量查询，这里通过FIND_IN_SET保留了按照查询顺序来返回结果；另外一种处理方式是手动自己去排序，
+func QueryAndOrderByIds(ids []int) (users []user, err error) {
+	strIds := make([]string, 0, len(ids))
+	for _, id := range ids {
+		strIds = append(strIds, fmt.Sprintf("%d", id))
+	}
+	query, args, err := sqlx.In("select id ,name , age from user where id in (?) order by FIND_IN_SET(id , ?)", ids, strings.Join(strIds, ","))
+	if err != nil {
+		return
+	}
+	query = db.Rebind(query)
+	err = db.Select(&users, query, args...)
+	return
+}
+
 func main() {
 	if err := initDB(); err != nil {
 		fmt.Printf("init db failed , err:%v\n", err)
@@ -236,10 +299,44 @@ func main() {
 	//}else {
 	//	fmt.Printf("insert success")
 	//}
+
 	//namedQuery()
-	if err := transactionDemo(); err != nil {
-		fmt.Printf("trans failed , err:%v\n", err)
-	} else {
-		fmt.Printf("trans success")
+
+	//if err := transactionDemo(); err != nil {
+	//	fmt.Printf("trans failed , err:%v\n", err)
+	//} else {
+	//	fmt.Printf("trans success")
+	//}
+
+	//u1 := user{Name: "duck", Age: 41}
+	//u2 := user{Name: "tiger", Age: 42}
+	//u3 := user{Name: "cow", Age: 43}
+	//users := []*user{&u1, &u2, &u3}
+	//if err := BatchInsertUsers(users); err != nil {
+	//	fmt.Printf("BatchInsertUsers failed , err:%v\n", err)
+	//}
+
+	//user2 := []interface{}{u1, u2, u3} //元素类型为 interface{}。interface{} 是空接口，
+	//if err := BatchInsertUsers2(user2); err != nil {
+	//	fmt.Printf("batch insert2 failed , err:%v\n", err)
+	//}
+
+	//if err := BatchInsertUsers3(users); err != nil {
+	//	fmt.Printf("batch insert3 failed , err:%v\n", err)
+	//}
+
+	//ids := []int{1, 2, 5, 6}
+	//users2, err := QueryByIDs(ids)
+	//if err != nil {
+	//	fmt.Printf("queryByIds failed , err:%v\n", err)
+	//}
+	//fmt.Printf("queryByIds:%v\n", users2)
+
+	ids := []int{10, 8, 1, 2, 5}
+	users2, err := QueryAndOrderByIds(ids)
+	if err != nil {
+		fmt.Printf("QueryAndOrderByIds failed , err:%v\n", users2)
 	}
+	fmt.Printf("QueryAndOrderByIds:%v\n", users2)
+
 }
