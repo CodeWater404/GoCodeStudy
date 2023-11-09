@@ -12,17 +12,22 @@ import (
 **/
 
 var logger *zap.Logger
+var sugarLogger *zap.SugaredLogger
 
 func InitLogger() {
 	logger, _ = zap.NewProduction()
+	sugarLogger = logger.Sugar()
 }
 
 func simpleHttpGet(url string) {
+	sugarLogger.Debugf("Trying to hit GET request for %s", url)
 	resp, err := http.Get(url)
 	if err != nil {
-		logger.Error("error fetching url...", zap.String("url", url), zap.Error(err))
+		//logger.Error("error fetching url...", zap.String("url", url), zap.Error(err))
+		sugarLogger.Errorf("error fetching url %s : error = %s", url, err)
 	} else {
-		logger.Info("success!!!", zap.String("statusCode", resp.Status), zap.String("url", url))
+		//logger.Info("success!!!", zap.String("statusCode", resp.Status), zap.String("url", url))
+		sugarLogger.Infof("success!!! statusCode = %s for url %s", resp.Status, url)
 		resp.Body.Close()
 	}
 }
