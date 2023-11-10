@@ -2,10 +2,8 @@ package main
 
 import (
 	"fmt"
-	"net/http"
 
 	"github.com/fsnotify/fsnotify"
-	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
 )
 
@@ -24,6 +22,19 @@ import (
 		从buffer读取配置
 		显式配置值
 **/
+
+// Config 嵌套配置反序列化演示
+type Config struct {
+	Port        int    `mapstructure:"port"`
+	Version     string `mapstructure:"version"`
+	MySQLConfig `mapstructure:"mysql"`
+}
+
+type MySQLConfig struct {
+	Host   string `mapstructure:"host"`
+	DbName string `mapstructure:"dbname"`
+	Port   int    `mapstructure:"port"`
+}
 
 func main() {
 	viper.SetDefault("fileDir", "./")       //设置默认值
@@ -44,10 +55,17 @@ func main() {
 		fmt.Println("config file changed:", e.Name)
 	})
 
-	r := gin.Default()
-	r.GET("/version", func(c *gin.Context) {
-		c.String(http.StatusOK, viper.GetString("version"))
-	})
+	var c Config
+	if err := viper.Unmarshal(&c); err != nil {
+		fmt.Printf("viper.Unmarshal failed , err:%v\n", err)
+		return
+	}
+	fmt.Printf("===>config:%#v\n", c)
 
-	r.Run()
+	//r := gin.Default()
+	//r.GET("/version", func(c *gin.Context) {
+	//	c.String(http.StatusOK, viper.GetString("version"))
+	//})
+	//
+	//r.Run()
 }
