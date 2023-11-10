@@ -10,11 +10,12 @@ import (
   @author: CodeWater
   @since: 2023/11/8
   @desc: go-redis基本使用
+	https://www.liwenzhou.com/posts/Go/redis/
 **/
 
 var rdb *redis.Client
 
-//initClient 初始化
+// initClient 初始化
 func initClient() (err error) {
 	rdb = redis.NewClient(&redis.Options{
 		Addr:     "localhost:6379",
@@ -28,7 +29,7 @@ func initClient() (err error) {
 	return nil
 }
 
-//initClientSentry 连接redis哨兵模式
+// initClientSentry 连接redis哨兵模式
 func initClientSentry() (err error) {
 	rdb = redis.NewFailoverClient(&redis.FailoverOptions{
 		MasterName:    "master",
@@ -41,7 +42,7 @@ func initClientSentry() (err error) {
 	return nil
 }
 
-//initClientCluster 连接redis集群
+// initClientCluster 连接redis集群
 func initClientCluster() (err error) {
 	rdb := redis.NewClusterClient(&redis.ClusterOptions{
 		Addrs: []string{":7000", ":7001", ":7002", ":7003", ":7004", ":7005"},
@@ -53,7 +54,7 @@ func initClientCluster() (err error) {
 	return nil
 }
 
-//redisExample set/get案例
+// redisExample set/get案例
 func redisExample() {
 	err := rdb.Set("score", 100, 0).Err()
 	if err != nil {
@@ -79,7 +80,7 @@ func redisExample() {
 	}
 }
 
-//redisExample2 zset案列
+// redisExample2 zset案列
 func redisExample2() {
 	zsetKey := "lang_rank"
 	languages := []redis.Z{
@@ -129,7 +130,8 @@ func redisExample2() {
 
 }
 
-/*pipelineDemo
+/*
+pipelineDemo
 主要是一种网络优化。它本质上意味着客户端缓冲一堆命令并一次性将它们发送到服务器。
 这些命令不能保证在事务中执行。这样做的好处是节省了每个命令的网络往返时间（RTT）。
 所以前后的命令有依赖的时候，就不能用这个了，因为没有保证事务性;
@@ -147,7 +149,7 @@ func pipelineDemo() {
 	fmt.Printf("pipeline succ , incr:%v\n", incr.Val())
 }
 
-//pipelinedDemo 与pipelineDemo类似，只是这个是用的函数
+// pipelinedDemo 与pipelineDemo类似，只是这个是用的函数
 func pipelinedDemo() {
 	var incr *redis.IntCmd
 	_, err := rdb.Pipelined(func(pipe redis.Pipeliner) error {
@@ -162,7 +164,8 @@ func pipelinedDemo() {
 	fmt.Printf("pipelined succ , incr:%v\n", incr.Val())
 }
 
-/*txPipelineDemo 事务
+/*
+txPipelineDemo 事务
 Redis是单线程的，因此单个命令始终是原子的，但是来自不同客户端的两个给定命令可以依次执行(也就是在程序运行时，另外一个客户端有命令执行，这两个不冲突不会err)，
 watch会报err，
 例如在它们之间交替执行。但是，Multi/exec能够确保在multi/exec两个语句之间的命令之间没有其他客户端正在执行命令。
@@ -180,7 +183,7 @@ func txPipelineDemo() {
 	fmt.Printf("tx_pipeline succ , incr:%v\n", incr.Val())
 }
 
-//txPipelinedDemo 与txPipelineDemo类似，只是这个是用的函数
+// txPipelinedDemo 与txPipelineDemo类似，只是这个是用的函数
 func txPipelinedDemo() {
 	var incr *redis.IntCmd
 	_, err := rdb.TxPipelined(func(pipe redis.Pipeliner) error {
@@ -191,11 +194,13 @@ func txPipelinedDemo() {
 	fmt.Printf("tx_pipelined finished , incr:%v , err:%v\n", incr.Val(), err)
 }
 
-/*watchDemo
+/*
+watchDemo
 在某些场景下，我们除了要使用MULTI/EXEC命令外，还需要配合使用WATCH命令。
 在用户使用WATCH命令监视某个键之后，直到该用户执行EXEC命令的这段时间里，
 如果有其他用户抢先对被监视的键进行了替换、更新、删除等操作，那么当用户尝试执行EXEC的时候
-，事务将失败并返回一个错误，用户可以根据这个错误选择重试事务或者放弃事务。*/
+，事务将失败并返回一个错误，用户可以根据这个错误选择重试事务或者放弃事务。
+*/
 func watchDemo() {
 	key := "watch_count"
 	err := rdb.Watch(func(tx *redis.Tx) error {

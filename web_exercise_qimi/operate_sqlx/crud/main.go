@@ -14,6 +14,7 @@ import (
   @author: CodeWater
   @since: 2023/11/7
   @desc: crud with sqlx
+	https://www.liwenzhou.com/posts/Go/sqlx/
 **/
 
 var (
@@ -46,7 +47,7 @@ type user struct {
 	Age  int    `db:"age"`
 }
 
-//queryRowDemo 查询单条数据
+// queryRowDemo 查询单条数据
 func queryRowDemo() {
 	sqlStr := "select id , name , age from user where id = ?"
 	var u user
@@ -58,7 +59,7 @@ func queryRowDemo() {
 	fmt.Printf("id:%d , name:%s , age:%d\n", u.ID, u.Name, u.Age)
 }
 
-//queryMultiDemo 查询多条数据
+// queryMultiDemo 查询多条数据
 func queryMultiDemo() {
 	sqlStr := "select id , name , age from user where id > ?"
 	var users []user
@@ -71,7 +72,7 @@ func queryMultiDemo() {
 
 }
 
-//insertRowDemo 插入一条数据
+// insertRowDemo 插入一条数据
 func insertRowDemo() {
 	sqlStr := "insert into user (name , age) values(? , ?)"
 	ret, err := db.Exec(sqlStr, "cat", 28)
@@ -87,7 +88,7 @@ func insertRowDemo() {
 	fmt.Printf("insert success , the id is %d\n", theId)
 }
 
-//updateRowDemo 更新一条数据
+// updateRowDemo 更新一条数据
 func updateRowDemo() {
 	sqlStr := "update user set age=? where id = ?"
 	ret, err := db.Exec(sqlStr, 66, 6)
@@ -103,7 +104,7 @@ func updateRowDemo() {
 	fmt.Printf("update success , affected rows:%d\n", n)
 }
 
-//deleteRowDemo 删除一条数据
+// deleteRowDemo 删除一条数据
 func deleteRowDemo() {
 	sqlStr := "delete from user where id = ?"
 	ret, err := db.Exec(sqlStr, 6)
@@ -119,7 +120,7 @@ func deleteRowDemo() {
 	fmt.Printf("delete success , affected rows:%d\n", n)
 }
 
-//insertUserDemo namedExec绑定sql语句与结构体或map中的同名字段
+// insertUserDemo namedExec绑定sql语句与结构体或map中的同名字段
 func insertUserDemo() (err error) {
 	sqlStr := "insert into user(name , age) values(:name , :age)"
 	_, err = db.NamedExec(sqlStr,
@@ -130,7 +131,7 @@ func insertUserDemo() (err error) {
 	return
 }
 
-//namedQuery namedQuery绑定sql语句与结构体或map中的同名字段,不过这里是支持查询的
+// namedQuery namedQuery绑定sql语句与结构体或map中的同名字段,不过这里是支持查询的
 func namedQuery() {
 	sqlStr := "select * from user where name=:name"
 	rows, err := db.NamedQuery(sqlStr, map[string]interface{}{
@@ -170,7 +171,7 @@ func namedQuery() {
 	}
 }
 
-//transactionDemo 事务例子
+// transactionDemo 事务例子
 func transactionDemo() (err error) {
 	tx, err := db.Beginx()
 	if err != nil {
@@ -220,7 +221,7 @@ func transactionDemo() (err error) {
 
 }
 
-//BatchInsertUsers 批量插入，手动拼接sql
+// BatchInsertUsers 批量插入，手动拼接sql
 func BatchInsertUsers(users []*user) error {
 	valueString := make([]string, 0, len(users))
 	valueArgs := make([]interface{}, 0, len(users)*2)
@@ -248,13 +249,13 @@ func BatchInsertUsers2(users []interface{}) error {
 	return err
 }
 
-//BatchInsertUsers3 sqlx内置接口批量插入
+// BatchInsertUsers3 sqlx内置接口批量插入
 func BatchInsertUsers3(users []*user) error {
 	_, err := db.NamedExec("insert into user (name , age) values(:name , :age)", users)
 	return err
 }
 
-//QueryByIDs 批量查询
+// QueryByIDs 批量查询
 func QueryByIDs(ids []int) (users []user, err error) {
 	query, args, err := sqlx.In("select id ,name , age from user where id in (?)", ids)
 	if err != nil {
@@ -266,7 +267,7 @@ func QueryByIDs(ids []int) (users []user, err error) {
 	return
 }
 
-//QueryAndOrderByIds 批量查询，这里通过FIND_IN_SET保留了按照查询顺序来返回结果；另外一种处理方式是手动自己去排序，
+// QueryAndOrderByIds 批量查询，这里通过FIND_IN_SET保留了按照查询顺序来返回结果；另外一种处理方式是手动自己去排序，
 func QueryAndOrderByIds(ids []int) (users []user, err error) {
 	strIds := make([]string, 0, len(ids))
 	for _, id := range ids {

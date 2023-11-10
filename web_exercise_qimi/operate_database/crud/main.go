@@ -8,11 +8,16 @@ import (
 	"os"
 )
 
-/**
-  @author: CodeWater
-  @since: 2023/11/6
-  @desc: crud
-**/
+/*
+*
+
+	  @author: CodeWater
+	  @since: 2023/11/6
+	  @desc: crud
+		https://www.liwenzhou.com/posts/Go/mysql/
+
+*
+*/
 var (
 	db  *sql.DB
 	dsn = "root:%s@tcp(%s:3306)/gin_qimi?charset=utf8mb4&parseTime=True"
@@ -50,7 +55,7 @@ type user struct {
 	name string
 }
 
-//queryRowDemo 查询单条数据
+// queryRowDemo 查询单条数据
 func queryRowDemo() {
 	sqlStr := "select id , name , age from user where id = ?"
 	var u user
@@ -67,7 +72,7 @@ func queryRowDemo() {
 	fmt.Printf("====>func queryRowDemo,id:%v , name:%v , age:%v\n", u.id, u.name, u.age)
 }
 
-//queryMultiRowDemo 查询多条数据
+// queryMultiRowDemo 查询多条数据
 func queryMultiRowDemo() {
 	sqlStr := "select id , name , age from user where id > ?"
 	rows, err := db.Query(sqlStr, 0)
@@ -88,7 +93,7 @@ func queryMultiRowDemo() {
 	}
 }
 
-//insertRowDemo 差入单条数据
+// insertRowDemo 差入单条数据
 func insertRowDemo() {
 	sqlStr := "insert into user(name , age) values(? , ?)"
 	ret, err := db.Exec(sqlStr, "water", 22)
@@ -104,7 +109,7 @@ func insertRowDemo() {
 	fmt.Printf("insert success , the id is %d\n", theId)
 }
 
-//updateRowDemo 更新一条数据
+// updateRowDemo 更新一条数据
 func updateRowDemo() {
 	sqlStr := "update user set age=? where id = ?"
 	ret, err := db.Exec(sqlStr, 30, 3)
@@ -120,7 +125,7 @@ func updateRowDemo() {
 	fmt.Printf("udpate success , affected rows:%v\n", n)
 }
 
-//deleteRowDemo 删除单条数据
+// deleteRowDemo 删除单条数据
 func deleteRowDemo() {
 	sqlStr := "delete from user where id = ?"
 	ret, err := db.Exec(sqlStr, 3)
@@ -136,7 +141,8 @@ func deleteRowDemo() {
 	fmt.Printf("delete success , affected rows:%v\n", n)
 }
 
-/*prepareQueryDemo 预处理查询
+/*
+prepareQueryDemo 预处理查询
 先发送sql语句给mysql，然后再发送数据；之前的操作都是先把占位符替换掉然后发送sql直接执行。
 场景：
 优化MySQL服务器重复执行SQL的方法，可以提升服务器性能，提前让服务器编译，一次编译多次执行，节省后续编译的成本。
@@ -166,7 +172,7 @@ func prepareQueryDemo() {
 	}
 }
 
-//prepareInsertDemo 预处理差入多条数据
+// prepareInsertDemo 预处理差入多条数据
 func prepareInsertDemo() {
 	sqlStr := "insert into user(name , age) values(? , ?)"
 	ret, err := db.Prepare(sqlStr)
@@ -188,7 +194,7 @@ func prepareInsertDemo() {
 	fmt.Println("prepare insert success")
 }
 
-//transactionDemo 模拟事务
+// transactionDemo 模拟事务
 func transactionDemo() {
 	tx, err := db.Begin()
 	if err != nil {

@@ -12,6 +12,7 @@ import (
   @since: 2023/11/9
   @desc: zap的基本使用
 	这个日志程序中唯一缺少的就是日志切割归档功能。
+	https://www.liwenzhou.com/posts/Go/zap/#c-1-3-3
 **/
 
 var logger *zap.Logger
