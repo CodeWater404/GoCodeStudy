@@ -29,7 +29,7 @@ func Init() (err error) {
 	writeSyncer := getLogWriter(
 		viper.GetString("log.filename"),
 		viper.GetInt("log.max_size"),
-		viper.GetInt("log.maxbackups"),
+		viper.GetInt("log.max_backups"),
 		viper.GetInt("log.max_age"))
 	encoder := getEncoder()
 	var l = new(zapcore.Level)

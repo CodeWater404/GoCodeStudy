@@ -16,10 +16,10 @@ import (
 
 func Init() (err error) {
 	//viper.SetConfigFile("config.json") // 指定配置文件
-	viper.SetConfigName("config")      // 指定配置文件名称（不需要制定配置文件的扩展名）
-	viper.SetConfigType("yaml")        // 指定配置文件类型（专用于从远程etcd获取配置信息时指定配置文件类型）
-	viper.AddConfigPath("./bluebell/") // 指定查找配置文件的路径（这里使用相对路径）
-	err = viper.ReadInConfig()         // 读取配置信息
+	viper.SetConfigName("config")     // 指定配置文件名称（不需要制定配置文件的扩展名）
+	viper.SetConfigType("yaml")       // 指定配置文件类型（专用于从远程etcd获取配置信息时指定配置文件类型）
+	viper.AddConfigPath("./web_app/") // 指定查找配置文件的路径（这里使用相对路径）
+	err = viper.ReadInConfig()        // 读取配置信息
 	if err != nil {
 		// 读取配置信息失败
 		fmt.Printf("viper.ReadInConfig() failed, err:%v\n", err)

@@ -9,12 +9,12 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
-	"web_exercise_qimi/pkg/snowflake"
-	"web_exercise_qimi/web_app/dao/mysql"
-	"web_exercise_qimi/web_app/dao/redis"
-	"web_exercise_qimi/web_app/logger"
-	"web_exercise_qimi/web_app/routes"
-	"web_exercise_qimi/web_app/settings"
+	"web_exercise_qimi/bluebell/dao/mysql"
+	"web_exercise_qimi/bluebell/dao/redis"
+	"web_exercise_qimi/bluebell/logger"
+	"web_exercise_qimi/bluebell/pkg/snowflake"
+	"web_exercise_qimi/bluebell/routes"
+	"web_exercise_qimi/bluebell/settings"
 
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
@@ -61,7 +61,7 @@ func main() {
 	r := routes.Setup()
 	// 6.启动服务（优雅关机）
 	srv := &http.Server{
-		Addr:    fmt.Sprintf(":%d", viper.GetInt("app.port")),
+		Addr:    fmt.Sprintf(":%d", viper.GetInt("port")),
 		Handler: r,
 	}
 	go func() {
