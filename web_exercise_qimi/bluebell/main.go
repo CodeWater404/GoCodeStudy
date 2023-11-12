@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+	"web_exercise_qimi/bluebell/controller"
 	"web_exercise_qimi/bluebell/dao/mysql"
 	"web_exercise_qimi/bluebell/dao/redis"
 	"web_exercise_qimi/bluebell/logger"
@@ -55,6 +56,10 @@ func main() {
 	defer redis.Close()
 	if err := snowflake.Init(viper.GetString("start_time"), viper.GetInt64("machine_id")); err != nil {
 		fmt.Printf("init snowflaske failed , err:%v\n", err)
+		return
+	}
+	if err := controller.InitTrans("zh"); err != nil {
+		fmt.Printf("init validator trans failed , err:%v\n", err)
 		return
 	}
 	// 5.注册路由

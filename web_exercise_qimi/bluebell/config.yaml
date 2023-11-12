@@ -6,7 +6,7 @@ start_time: "2023-11-11"
 machine_id: 1
 log:
   level: "debug"
-  filename: "bluebell.log"
+  filename: "./bluebell/bluebell.log"
   max_size: 200
   max_age: 30
   max_backups: 7

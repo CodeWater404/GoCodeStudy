@@ -8,7 +8,7 @@ package models
 
 // ParamSignUp 用于接收注册请求参数的结构体
 type ParamSignUp struct {
-	Username   string `json:"username" `
-	Password   string `json:"password"`
-	RePassword string `json:"re_password"`
+	Username   string `json:"username"  binding:"required"`
+	Password   string `json:"password" binding:"required"`
+	RePassword string `json:"re_password" binding:"required,eqfield=Password"` //eqfield=Password 与 Password 字段相等; required 必填
 }
