@@ -1,8 +1,9 @@
 package controller
 
 import (
+	"errors"
 	"fmt"
-	"net/http"
+	"web_exercise_qimi/bluebell/dao/mysql"
 	"web_exercise_qimi/bluebell/logic"
 	"web_exercise_qimi/bluebell/models"
 
@@ -28,15 +29,11 @@ func SignUpHandler(c *gin.Context) {
 		// 判断err是不是validator.ValidationErrors类型
 		errs, ok := err.(validator.ValidationErrors)
 		if !ok {
-			c.JSON(http.StatusOK, gin.H{
-				"msg": err.Error(), //不是validator.ValidationErrors类型就返回原来的错误
-			})
+			ResponseError(c, CodeInvalidParam)
 			return
 		}
-		c.JSON(http.StatusOK, gin.H{
-			//一般不暴露内部系统的错误
-			"msg": removeTopStruct(errs.Translate(trans)), //是validator.ValidationErrors类型就翻译成中文
-		})
+		//当出现未定义的错误时，用带有msg的ResponseErrorWithMsg返回
+		ResponseErrorWithMsg(c, CodeInvalidParam, removeTopStruct(errs.Translate(trans)))
 		return
 	}
 	//手动对参数进行校验(结构体中增加binding tag，用shouldbindjson就会自动判断)
@@ -52,15 +49,15 @@ func SignUpHandler(c *gin.Context) {
 	// 2. 业务处理
 	if err := logic.SignUp(p); err != nil {
 		zap.L().Error("logic.SignUp failed", zap.Error(err))
-		c.JSON(http.StatusOK, gin.H{
-			"msg": "注册失败",
-		})
+		if errors.Is(err, mysql.ErrorUserNotExist) {
+			ResponseError(c, CodeUserNotExist)
+			return
+		}
+		ResponseError(c, CodeServerBusy)
 		return
 	}
 	// 3. 返回响应
-	c.JSON(http.StatusOK, gin.H{
-		"msg": "success",
-	})
+	ResponseSuccess(c, nil)
 }
 
 func LoginHandler(c *gin.Context) {
@@ -70,26 +67,22 @@ func LoginHandler(c *gin.Context) {
 		zap.L().Error("Login with invalid param", zap.Error(err))
 		errs, ok := err.(validator.ValidationErrors)
 		if !ok {
-			c.JSON(http.StatusOK, gin.H{
-				"msg": err.Error(),
-			})
+			ResponseError(c, CodeInvalidParam)
 			return
 		}
-		c.JSON(http.StatusOK, gin.H{
-			"msg": removeTopStruct(errs.Translate(trans)),
-		})
+		ResponseErrorWithMsg(c, CodeInvalidParam, removeTopStruct(errs.Translate(trans)))
 		return
 	}
 	// 2. 业务处理
 	if err := logic.Login(&p); err != nil {
 		zap.L().Error("logic.Login failed", zap.Error(err))
-		c.JSON(http.StatusOK, gin.H{
-			"msg": "登录失败",
-		})
+		if errors.Is(err, mysql.ErrorUserNotExist) {
+			ResponseError(c, CodeUserNotExist)
+			return
+		}
+		ResponseError(c, CodeInvalidPassword)
 		return
 	}
 	// 3. 返回响应
-	c.JSON(http.StatusOK, gin.H{
-		"msg": "登录成功",
-	})
+	ResponseSuccess(c, nil)
 }
