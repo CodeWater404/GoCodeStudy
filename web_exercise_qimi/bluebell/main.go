@@ -34,7 +34,7 @@ func main() {
 		return
 	}
 	// 2.初始化日志
-	if err := logger.Init(); err != nil {
+	if err := logger.Init(viper.GetString("mode")); err != nil {
 		fmt.Printf("init logger failed, err:%v\n", err)
 		return
 	}
@@ -63,7 +63,7 @@ func main() {
 		return
 	}
 	// 5.注册路由
-	r := routes.Setup()
+	r := routes.Setup(viper.GetString("mode"))
 	// 6.启动服务（优雅关机）
 	srv := &http.Server{
 		Addr:    fmt.Sprintf(":%d", viper.GetInt("port")),
