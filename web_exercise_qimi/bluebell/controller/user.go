@@ -39,7 +39,7 @@ func SignUpHandler(c *gin.Context) {
 		})
 		return
 	}
-	//手动对参数进行校验
+	//手动对参数进行校验(结构体中增加binding tag，用shouldbindjson就会自动判断)
 	//if len(p.Username) == 0 || len(p.Password) == 0 || len(p.RePassword) == 0 || p.Password != p.RePassword {
 	//	zap.L().Error("SignUp with invalid param")
 	//	c.JSON(http.StatusOK, gin.H{
@@ -48,9 +48,15 @@ func SignUpHandler(c *gin.Context) {
 	//	return
 	//}
 
-	fmt.Printf("signup===>p: %#v\n", p)
+	fmt.Printf("controller signup===>p: %#v\n", p)
 	// 2. 业务处理
-	logic.SignUp(p)
+	if err := logic.SignUp(p); err != nil {
+		zap.L().Error("logic.SignUp failed", zap.Error(err))
+		c.JSON(http.StatusOK, gin.H{
+			"msg": "注册失败",
+		})
+		return
+	}
 	// 3. 返回响应
 	c.JSON(http.StatusOK, gin.H{
 		"msg": "success",
