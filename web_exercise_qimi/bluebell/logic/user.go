@@ -32,3 +32,12 @@ func SignUp(p *models.ParamSignUp) (err error) {
 	// 3. 存入数据库
 	return mysql.InsertUser(user)
 }
+
+// Login 处理登录的业务逻辑
+func Login(p *models.ParamLogin) error {
+	user := &models.User{
+		Username: p.Username,
+		Password: p.Password,
+	}
+	return mysql.Login(user)
+}
