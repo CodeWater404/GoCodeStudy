@@ -3,6 +3,7 @@ package logic
 import (
 	"web_exercise_qimi/bluebell/dao/mysql"
 	"web_exercise_qimi/bluebell/models"
+	"web_exercise_qimi/bluebell/pkg/jwt"
 	"web_exercise_qimi/bluebell/pkg/snowflake"
 )
 
@@ -34,10 +35,13 @@ func SignUp(p *models.ParamSignUp) (err error) {
 }
 
 // Login 处理登录的业务逻辑
-func Login(p *models.ParamLogin) error {
+func Login(p *models.ParamLogin) (token string, err error) {
 	user := &models.User{
 		Username: p.Username,
 		Password: p.Password,
 	}
-	return mysql.Login(user)
+	if err := mysql.Login(user); err != nil {
+		return "", err
+	}
+	return jwt.GenToken(user.UserID, user.Username)
 }
