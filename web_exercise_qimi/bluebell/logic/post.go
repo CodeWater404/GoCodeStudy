@@ -19,7 +19,7 @@ func CreatePost(p *models.Post) error {
 	return mysql.CreatePost(p)
 }
 
-func GetPostById(pid int64) (data *models.PostDetail, err error) {
+func GetPostById(pid int64) (data *models.ApiPostDetail, err error) {
 	post, err := mysql.GetPostById(pid)
 	if err != nil {
 		zap.L().Error("mysql.GetPostById failed", zap.Int64("pid", pid), zap.Error(err))
@@ -35,10 +35,38 @@ func GetPostById(pid int64) (data *models.PostDetail, err error) {
 		zap.L().Error("mysql.GetCommunityDetailById failed", zap.Int64("community_id", post.CommunityID), zap.Error(err))
 		return
 	}
-	data = &models.PostDetail{
+	data = &models.ApiPostDetail{
 		AuthorName:      user.Username,
 		Post:            post,
 		CommunityDetail: community,
+	}
+	return
+}
+
+func GetPostList(page, size int64) (data []*models.ApiPostDetail, err error) {
+	posts, err := mysql.GetPostList(page, size)
+	if err != nil {
+		return nil, err
+	}
+	data = make([]*models.ApiPostDetail, 0, len(posts))
+	for _, post := range posts {
+		user, err := mysql.GetUserById(post.AuthorID)
+		if err != nil {
+			zap.L().Error("mysql.GetUserById list failed", zap.Int64("author_id", post.AuthorID), zap.Error(err))
+			//todo: write return can report error: inner declaration of var err error
+			continue
+		}
+		community, err := mysql.GetCommunityDetailById(post.CommunityID)
+		if err != nil {
+			zap.L().Error("mysql.GetCommunityDetailById list failed", zap.Int64("community_id", post.CommunityID), zap.Error(err))
+			continue
+		}
+		postDetail := &models.ApiPostDetail{
+			AuthorName:      user.Username,
+			Post:            post,
+			CommunityDetail: community,
+		}
+		data = append(data, postDetail)
 	}
 	return
 }
