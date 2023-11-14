@@ -27,13 +27,17 @@ func Setup(mode string) *gin.Engine {
 	r := gin.New()
 	r.Use(logger.GinLogger(), logger.GinRecovery(true))
 
+	v1 := r.Group("/api/v1")
+
 	// 注册业务路由
-	r.POST("/signup", controller.SignUpHandler)
-	r.POST("/login", controller.LoginHandler)
-	r.GET("/ping", middleware.JWTAuthMiddleware(), func(c *gin.Context) {
-		// 如果是登录用户，判断请求头中是否有 有效的jwt
-		c.String(http.StatusOK, "pong")
-	})
+	v1.POST("/signup", controller.SignUpHandler)
+	v1.POST("/login", controller.LoginHandler)
+	//todo:写成这样air报错乱码v1.Use(middlelware.JWTAuthMiddleware())
+	v1.Use(middleware.JWTAuthMiddleware()) //这里明明写对了，但是goland还是报错，不知道为什么（Unresolved reference 'JWTAuthMiddleware'）
+
+	{
+		v1.GET("/community", controller.CommunityHandler)
+	}
 
 	r.NoRoute(func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{

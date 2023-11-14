@@ -4,6 +4,10 @@ port: 8080
 version: "v1.0.0"
 start_time: "2023-11-11"
 machine_id: 1
+
+auth:
+  jwt_expire: 8760
+
 log:
   level: "debug"
   filename: "./bluebell/bluebell.log"
