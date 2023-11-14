@@ -17,3 +17,9 @@ type Post struct {
 	Content     string `json:"content" db:"content" binding:"required"`
 	CreateTime  string `json:"create_time" db:"create_time"`
 }
+
+type PostDetail struct {
+	AuthorName string `json:"author_name"`
+	*Post
+	*CommunityDetail `json:"community"`
+}
