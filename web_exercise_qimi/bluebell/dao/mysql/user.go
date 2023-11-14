@@ -4,7 +4,6 @@ import (
 	"crypto/md5"
 	"database/sql"
 	"encoding/hex"
-	"errors"
 	"web_exercise_qimi/bluebell/models"
 )
 
@@ -15,12 +14,6 @@ import (
 **/
 
 const secret = "CodeWater"
-
-var (
-	ErrorUserExist       = errors.New("用户已存在")
-	ErrorUserNotExist    = errors.New("用户不存在")
-	ErrorInvalidPassword = errors.New("用户名或密码错误")
-)
 
 // CheckUserExist 检查用户是否存在
 func CheckUserExist(username string) (err error) {
