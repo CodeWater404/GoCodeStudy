@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"strconv"
 	"web_exercise_qimi/bluebell/logic"
 	"web_exercise_qimi/bluebell/models"
 
@@ -36,4 +37,21 @@ func CreatePostHandler(c *gin.Context) {
 	}
 	ResponseSuccess(c, nil)
 
+}
+
+func GetPostDetailHandler(c *gin.Context) {
+	pidStr := c.Param("id")
+	pid, err := strconv.ParseInt(pidStr, 10, 64)
+	if err != nil {
+		zap.L().Error("invalid param", zap.Error(err))
+		ResponseError(c, CodeInvalidParam)
+		return
+	}
+	data, err := logic.GetPostById(pid)
+	if err != nil {
+		zap.L().Error("logic.GetPostById failed", zap.Error(err))
+		ResponseError(c, CodeServerBusy)
+		return
+	}
+	ResponseSuccess(c, data)
 }
