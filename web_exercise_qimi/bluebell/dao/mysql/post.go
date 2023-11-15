@@ -24,7 +24,7 @@ func GetPostById(pid int64) (post *models.Post, err error) {
 }
 
 func GetPostList(page, size int64) (posts []*models.Post, err error) {
-	sqlStr := "select post_id , title , content , author_id , community_id , create_time from  post limit ?,?"
+	sqlStr := "select post_id , title , content , author_id , community_id , create_time from  post limit ?,? order by create_time desc"
 	posts = make([]*models.Post, 0, 2) // 不要写成make([]*models.Post, 2)
 	/*
 					1.posts = make([]*models.Post, 0, 2)虽然指定了容量2，但是size超过2的时候，会自动扩容，也就可以返回超过2条的数据
