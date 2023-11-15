@@ -2,6 +2,7 @@ package logic
 
 import (
 	"web_exercise_qimi/bluebell/dao/mysql"
+	"web_exercise_qimi/bluebell/dao/redis"
 	"web_exercise_qimi/bluebell/models"
 	"web_exercise_qimi/bluebell/pkg/snowflake"
 
@@ -14,9 +15,14 @@ import (
   @desc: $
 **/
 
-func CreatePost(p *models.Post) error {
+func CreatePost(p *models.Post) (err error) {
 	p.ID = snowflake.GenID()
-	return mysql.CreatePost(p)
+	err = mysql.CreatePost(p)
+	if err != nil {
+		return err
+	}
+	err = redis.CreatePost(p.ID, p.CommunityID)
+	return
 }
 
 func GetPostById(pid int64) (data *models.ApiPostDetail, err error) {
