@@ -1,6 +1,11 @@
 package mysql
 
-import "web_exercise_qimi/bluebell/models"
+import (
+	"strings"
+	"web_exercise_qimi/bluebell/models"
+
+	"github.com/jmoiron/sqlx"
+)
 
 /**
   @author: CodeWater
@@ -42,5 +47,20 @@ func GetPostList(page, size int64) (posts []*models.Post, err error) {
 			make([]T, length) 适用于你不需要显式控制容量的情况，只关心切片的长度。这种方式会将容量设置为与长度相等，因此在切片长度达到容量时，需要重新分配内部数组以支持更多的元素。
 	*/
 	err = db.Select(&posts, sqlStr, (page-1)*size, size)
+	return
+}
+
+func GetPostListByIDs(ids []string) (postList []*models.Post, err error) {
+	sqlStr := `select post_id , title , content , author_id , community_id , create_time 
+				from post 
+				where post_id in(?) 
+				order by FIND_IN_SET(post_id , ?)` //FIND_IN_SET
+
+	query, args, err := sqlx.In(sqlStr, ids, strings.Join(ids, ","))
+	if err != nil {
+		return nil, err
+	}
+	query = db.Rebind(query)
+	err = db.Select(&postList, query, args...)
 	return
 }
