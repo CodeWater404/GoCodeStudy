@@ -6,7 +6,7 @@ import (
 	"web_exercise_qimi/bluebell/logger"
 	"web_exercise_qimi/bluebell/middleware"
 
-	/*为什么这个不行
+	/*todo:为什么这个不行
 	gs "github.com/swaggo/gin-swagger"
 	"github.com/swaggo/gin-swagger/swaggerFiles"
 	*/
