@@ -27,6 +27,14 @@ import (
   @desc: go web开发较通用的脚手架模板
 **/
 
+// @title bluebell项目接口文档
+// @description 基于Gin + Gorm + Redis的论坛项目
+// @version 1.0
+// @termsOfService http://swagger.io/terms/
+// @contact.name CodeWater
+// @contact.url https://github.com/codewater404/GoCodeStudy/
+// @host http://localhost:8080/
+// @BasePath /api/v1/
 func main() {
 	// 1.加载配置文件
 	if err := settings.Init(); err != nil {

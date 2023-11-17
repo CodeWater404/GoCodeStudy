@@ -16,6 +16,17 @@ import (
   @desc: $
 **/
 
+// CreatePostHandler 创建帖子
+// @Summary 创建帖子
+// @Description 创建帖子,需要登录,会放入数据库和redis中
+// @Tags 帖子相关接口
+// @Accept application/json
+// @Produce application/json
+// @Param Authorization header string false "Bearer 用户令牌"
+// @Param object query models.ParamPostList false "查询参数"
+// @Security ApiKeyAuth
+// @Success 200 {object} _ResponsePostList
+// @Router /api/v1/post [post]
 func CreatePostHandler(c *gin.Context) {
 	p := new(models.Post)
 	if err := c.ShouldBindJSON(p); err != nil {
@@ -39,6 +50,17 @@ func CreatePostHandler(c *gin.Context) {
 
 }
 
+// GetPostDetailHandler 获取帖子详情
+// @Summary 获取帖子详情
+// @Description 获取帖子详情，会展示帖子内容
+// @Tags 帖子相关接口
+// @Accept json
+// @Produce json
+// @Param Authorization header string false "Bearer 用户令牌"
+// @Param id query int true "查询参数，帖子id"
+// @Security ApiKeyAuth
+// @Success 200 {object} _ResponsePostList
+// @Router /api/v1/post/{id} [get]
 func GetPostDetailHandler(c *gin.Context) {
 	pidStr := c.Param("id")
 	pid, err := strconv.ParseInt(pidStr, 10, 64)
@@ -56,6 +78,16 @@ func GetPostDetailHandler(c *gin.Context) {
 	ResponseSuccess(c, data)
 }
 
+// GetPostListHandler 获取帖子列表
+// @Summary 获取帖子列表
+// @Description 获取帖子列表,会展示帖子内容
+// @Tags 帖子相关接口
+// @Accept application/json
+// @Produce application/json
+// @Param Authorization header string false "Bearer 用户令牌"
+// @Security ApiKeyAuth
+// @Success 200 {object} _ResponsePostList
+// @Router /api/v1/posts [get]
 func GetPostListHandler(c *gin.Context) {
 	page, size := getPageInfo(c)
 	data, err := logic.GetPostList(page, size)
@@ -67,6 +99,16 @@ func GetPostListHandler(c *gin.Context) {
 	ResponseSuccess(c, data)
 }
 
+// GetPostListHandler2 获取帖子列表[新]
+// @Summary 获取帖子列表[新]
+// @Description 获取帖子列表,会展示帖子内容,可以按照时间或者分数排序,默认按照时间排序,可以指定社区,不指定社区就是查所有的帖子
+// @Tags 帖子相关接口
+// @Accept application/json
+// @Produce application/json
+// @Param Authorization header string false "Bearer 用户令牌"
+// @Security ApiKeyAuth
+// @Success 200 {object} _ResponsePostList
+// @Router /api/v1/posts2 [get]
 func GetPostListHandler2(c *gin.Context) {
 	// get请求参数（query string）： /api/v1/posts2/?page=1&size=10&order=time
 	// 初始化结构体时指定初始参数，前端没传的时候就用这个当作默认值
