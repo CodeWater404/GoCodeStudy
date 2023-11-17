@@ -2,6 +2,7 @@ package routes
 
 import (
 	"net/http"
+	"time"
 	"web_exercise_qimi/bluebell/controller"
 	"web_exercise_qimi/bluebell/logger"
 	"web_exercise_qimi/bluebell/middleware"
@@ -34,7 +35,7 @@ func Setup(mode string) *gin.Engine {
 		gin.SetMode(gin.ReleaseMode)
 	}
 	r := gin.New()
-	r.Use(logger.GinLogger(), logger.GinRecovery(true))
+	r.Use(logger.GinLogger(), logger.GinRecovery(true), middleware.RateLimitMiddleware(2*time.Second, 1)) // 令牌桶限流,2秒放一个令牌，桶子的容量为1
 
 	v1 := r.Group("/api/v1")
 
