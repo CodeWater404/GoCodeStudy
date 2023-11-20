@@ -39,6 +39,12 @@ func bar(l sync.Locker) {
 // GoID 获取goroutine id
 func GoID() int {
 	var buf [64]byte
+	/*
+		Stack 函数用于获取当前 goroutine 的调用栈信息。Stack 函数接受两个参数：
+		第一个参数是一个字节切片，用于存储调用栈信息。在这个例子中，buf[:] 创建了一个包含 buf 所有元素的切片。
+		第二个参数是一个布尔值，用于指定是否包含所有的 goroutines 的调用栈信息。如果为 true，则会包含所有 goroutines 的调用栈信息；
+		如果为 false，则只包含当前 goroutine 的调用栈信息。在这个例子中，只获取了当前 goroutine 的调用栈信息。
+	*/
 	n := runtime.Stack(buf[:], false)
 	// 得到id字符串
 	idField := strings.Fields(strings.TrimPrefix(string(buf[:n]), "goroutine"))[0]
