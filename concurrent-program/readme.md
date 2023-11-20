@@ -89,6 +89,8 @@ CAS 指令将给定的值和一个内存地址中的值进行比较，如果它�
    3. 不可剥夺：资源只能由持有它的 goroutine 来释放。 
    4. 环路等待：一般来说，存在一组等待进程，P={P1，P2，…，PN}，P1 等待 P2 持有的资源，P2 等待 P3 持有的资源，依此类推，最后是 PN 等待 P1 持有的资源，这就形成了一个环路等待的死结。
 
-
-
+### mutex总结
+![Alt text](./attach/image.png)
+![Alt text](./attach/image-1.png)
+![Alt text](./attach/image-2.png)
 
