@@ -227,3 +227,189 @@ writer 才可以继续竞争这把锁。
 ### RWMutex 总结
 ![img.png](./attach/img_5.png)
 ![img.png](./attach/img_6.png)
+
+## WaitGroup协同等待，任务编排利器
+WaitGroup 很简单，就是 package sync 用来做任务编排的一个并发原语。它要解决的就是并发 - 等待的问题： 现在有一个 goroutine A 在检查点（checkpoint）等待一组 goroutine 全部完成，如果在执行任务的这些 goroutine 还没全部完成，那么 goroutine A 就会阻塞在检查点，直到所有 goroutine 都完成后才能继续执行。
+
+Go 标准库中的 WaitGroup 提供了三个方法:
+1. `Add`，用来设置 WaitGroup 的计数值；
+2. `Done`，用来将 WaitGroup 的计数值减 1，其实就是调用了 Add(-1)；
+3. `Wait`，调用这个方法的 goroutine 会一直阻塞，直到 WaitGroup 的计数值变为 0
+
+基本示例：[1_concurrent_count.go](study-project-1%2F3_WaitGroup%2F1_concurrent_count.go)
+
+### WaitGroup 的实现原理
+WaitGroup 的数据结构。它包括了一个 noCopy 的辅助字段，一个state 记录 WaitGroup 状态的数组。
+1. `noCopy` 的辅助字段，主要就是辅助 vet 工具检查是否通过 copy 赋值这个 WaitGroup
+实例。我会在后面和你详细分析这个字段；
+2. `state`，一个具有复合意义的字段，包含 WaitGroup 的计数、阻塞在检查点的 waiter
+数和信号量。<br/>
+WaitGroup 的数据结构定义以及 state 信息的获取方法如下：
+```go
+//1.21.4 go版本已经修改了，新增sema  uint32字段
+type WaitGroup struct {
+// 避免复制使用的一个技巧，可以告诉vet工具违反了复制使用的规则
+noCopy noCopy
+// 64bit(8bytes)的值分成两段，高32bit是计数值，低32bit是waiter的计数
+// 另外32bit是用作信号量的
+// 因为64bit值的原子操作需要64bit对齐，但是32bit编译器不支持，所以数组中的元素在不同的
+// 总之，会找到对齐的那64bit作为state，其余的32bit做信号量
+state1 [3]uint32
+}
+```
+
+#### Add 方法
+Add 方法主要操作的是 state 的计数部分。你可以为计数值增加一个 delta 值，内部通过原子操作把这个值加到计数值上。需要注意的是，这个 delta 也可以是个负数，相当于为计数值减去一个值，Done 方法内部其实就是通过Add(-1) 实现的。
+![img.png](./attach/img_7.png)
+
+#### Done 方法
+Done 方法其实就是调用了 Add(-1)。它会把计数值减 1，如果计数值变为 0，就会唤醒所有阻塞在 Wait 方法上的 goroutine。
+```go
+func (wg *WaitGroup) Done() {
+	wg.Add(-1)
+}
+```
+
+#### Wait 方法
+Wait 方法的实现逻辑是：不断检查 state 的值。如果其中的计数值变为了 0，那么说明所有的任务已完成，调用者不必再等待，直接返回。如果计数值大于 0，说明此时还有任务没完成，那么调用者就变成了等待者，需要加入 waiter 队列，并且阻塞住自己。
+![img.png](./attach/img_8.png)
+
+
+### WaitGroup 的常见错误
+
+#### 计数器设置为负值
+WaitGroup 的计数器的值必须大于等于 0。我们在更改这个计数值的时候，WaitGroup 会先做检查，如果计数值被设置为负数，就会导致 panic。一般情况下，有两种方法会导致计数器设置为负数：
+1. 调用 Add 的时候传递一个负数。如果你能保证当前的计数器加上这个负数后还是大于等于 0 的话，也没有问题，否则就会导致 panic。
+    ```go
+    func main() {
+    var wg sync.WaitGroup
+    wg.Add(10)
+    wg.Add(-10)//将-10作为参数调用Add，计数值被设置为0
+    wg.Add(-1)//将-1作为参数调用Add，如果加上-1计数值就会变为负数。这是不对的，所以会触发panic
+    }
+    ```
+2. 调用 Done 方法的次数过多，超过了 WaitGroup 的计数值。<br/>
+   使用 WaitGroup 的正确姿势是，预先确定好 WaitGroup 的计数值，然后调用相同次数的 Done 完成相应的任务。比如，在 WaitGroup 变量声明之后，就立即设置它的计数值，或者在 goroutine 启动之前增加 1，然后在 goroutine 中调用 Done。
+    ```go
+    func main() {
+    var wg sync.WaitGroup
+    wg.Add(1)
+    wg.Done()
+    wg.Done()
+    }
+    ```
+   
+#### 不期望的 Add 时机
+在使用 WaitGroup 的时候，你一定要遵循的原则就是，等所有的 Add 方法调用之后再调用 Wait，否则就可能导致 panic 或者不期望的结果。
+```go
+func main() {
+var wg sync.WaitGroup
+go dosomething(100, &wg) // 启动第一个goroutine
+go dosomething(110, &wg) // 启动第二个goroutine
+go dosomething(120, &wg) // 启动第三个goroutine
+go dosomething(130, &wg) // 启动第四个goroutine
+wg.Wait() // 主goroutine等待完成
+fmt.Println("Done")
+}
+func dosomething(millisecs time.Duration, wg *sync.WaitGroup) {
+duration := millisecs * time.Millisecond
+time.Sleep(duration) // 故意sleep一段时间
+wg.Add(1)
+fmt.Println("后台执行, duration:", duration)
+wg.Done()
+}
+```
+在这个例子中，我们原本设想的是，等四个 goroutine 都执行完毕后输出 Done 的信息，
+但是它的错误之处在于，**将 WaitGroup.Add 方法的调用放在了子 gorotuine 中**。等主
+goorutine 调用 Wait 的时候，因为四个任务 goroutine 一开始都休眠，所以*可能
+WaitGroup 的 Add 方法还没有被调用，WaitGroup 的计数还是 0，所以它并没有等待四
+个子 goroutine 执行完毕才继续执行，而是立刻执行了下一步。*
+导致这个错误的原因是，没有遵循先完成所有的 Add 之后才 Wait。要解决这个问题，一
+个方法是，预先设置计数值,在启动协程之前设置。<br/>
+另一种修复是在启动子 goroutine 之前才调用 Add：
+```go
+func main() {
+var wg sync.WaitGroup
+dosomething(100, &wg) // 调用方法，把计数值加1，并启动任务goroutine
+dosomething(110, &wg) // 调用方法，把计数值加1，并启动任务goroutine
+dosomething(120, &wg) // 调用方法，把计数值加1，并启动任务goroutine
+dosomething(130, &wg) // 调用方法，把计数值加1，并启动任务goroutine
+wg.Wait() // 主goroutine等待，代码逻辑保证了四次Add(1)都已经执行完了
+fmt.Println("Done")
+}
+func dosomething(millisecs time.Duration, wg *sync.WaitGroup) {
+wg.Add(1) // 计数值加1，再启动goroutine
+go func() {
+duration := millisecs * time.Millisecond
+time.Sleep(duration)
+fmt.Println("后台执行, duration:", duration)
+wg.Done()
+}()
+}
+```
+> 无论是怎么修复，都要保证所有的 Add 方法是在 Wait 方法之前被调用的。
+ 
+
+#### 前一个 Wait 还没结束就重用 WaitGroup
+“前一个 Wait 还没结束就重用 WaitGroup”这一点似乎不太好理解，我借用田径比赛的
+例子和你解释下吧。在田径比赛的百米小组赛中，需要把选手分成几组，一组选手比赛完
+之后，就可以进行下一组了。为了确保两组比赛时间上没有冲突，我们在模型化这个场景
+的时候，可以使用 WaitGroup。<br/>
+WaitGroup 等一组比赛的所有选手都跑完后 5 分钟，才开始下一组比赛。下一组比赛还可
+以使用这个 WaitGroup 来控制，因为 WaitGroup 是可以重用的。只要 WaitGroup 的计
+数值恢复到零值的状态，那么它就可以被看作是新创建的 WaitGroup，被重复使用.看一个例子，初始设置 WaitGroup 的计数值为 1，启动一个 goroutine 先调 用 Done 方法，接着就调用 Add 方法，Add 方法有可能和主 goroutine 并发执行。
+```go
+func main() {
+var wg sync.WaitGroup
+wg.Add(1)
+go func() {
+time.Sleep(time.Millisecond)
+wg.Done() // 计数器减1
+wg.Add(1) // 计数值加1
+}()
+wg.Wait() // 主goroutine等待，有可能在done结束之后和add并发执行。
+}
+```
+在这个例子中，done虽然让 WaitGroup 的计数恢复到 0，但是主goroutine有个 waiter在等待，如果等待 Wait 的主goroutine，刚被唤醒就和 Add 调用的子goroutine有并发执行的冲突，所以就会出现 panic。
+> WaitGroup 虽然可以重用，但是是有一个前提的，那就是必须等到上一轮的
+Wait 完成之后，才能重用 WaitGroup 执行下一轮的 Add/Wait，如果你在 Wait 还没执
+行完的时候就调用下一轮 Add 方法，就有可能出现 panic。
+
+
+### noCopy：辅助 vet 检查
+我们刚刚在学习 WaitGroup 的数据结构时，提到了里面有一个 noCopy 字段。你还记得它的作用吗？其实，它就是指示 vet 工具在做检查的时候，这个数据结构不能做值复制使用。更严谨地说，是不能在第一次使用之后复制使用 ( must not be copied after first use).<br/>
+vet 会对实现 Locker 接口的数据类型做静态检查，一旦代码中有复制使用这种数据类型的情况，就会发出警告。
+通过给 WaitGroup 添加一个 noCopy 字段，我们就可以为 WaitGroup
+实现 Locker 接口，这样 vet 工具就可以做复制检查了。而且因为 noCopy 字段是未输出
+类型，所以 WaitGroup 不会暴露 Lock/Unlock 方法。
+> 如果你想要自己定义的数据结构不被复制使用，或者说，不能通过 vet 工具检查出复制使
+用的报警，就可以通过嵌入 noCopy 这个数据类型来实现。
+
+例子： 
+```go
+type TestStruct struct {
+Wait sync.WaitGroup
+}
+func main() {
+w := sync.WaitGroup{}
+w.Add(1)
+t := &TestStruct{
+Wait: w,
+}
+t.Wait.Done()
+fmt.Println("Finished")
+}
+```
+这段代码最大的一个问题，就是第 9 行 copy 了 WaitGroup 的实例 w。虽然这段代码能执行成功，但确实是违反了 WaitGroup 使用之后不要复制的规则。在项目中，我们可以通过 vet 工具检查出这样的错误。
+
+### 如何避免 WaitGroup 的常见错误
+只需要尽量保证下面 5 点就可以了：
+1. 不重用 WaitGroup。新建一个 WaitGroup 不会带来多大的资源开销，重用反而更容易出错。
+2. 保证所有的 Add 方法调用都在 Wait 之前。
+3. 不传递负数给 Add 方法，只通过 Done 来给计数值减 1。
+4. 不做多余的 Done 方法调用，保证 Add 的计数值和 Done 方法调用的数量是一样的。
+5. 不遗漏 Done 方法的调用，否则会导致 Wait hang 住无法返回。
+
+### WaitGroup 总结
+![img.png](./attach/img_9.png)
+![img.png](./attach/img_10.png)
