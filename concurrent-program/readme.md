@@ -118,3 +118,112 @@ mutexWoken 和 mutexStarving 是用来表示互斥锁的这三种状态的常量
 ![Alt text](./attach/image-1.png)
 ![Alt text](./attach/image-2.png)
 
+
+## RWMutex读写锁
+标准库中的 RWMutex 是一个 reader/writer 互斥锁。RWMutex 在某一时刻只能由**任意数量的 reader 持有**，或者是**只被单个的 writer 持有**。
+
+RWMutex 的方法也很少，总共有 5 个:
+1. `Lock/Unlock`：**写**操作时调用的方法。如果锁已经被 reader 或者 writer 持有，那么，
+Lock 方法会一直阻塞，直到能获取到锁；Unlock 则是配对的释放锁的方法。
+2. `RLock/RUnlock`：**读**操作时调用的方法。如果锁已经被 writer 持有的话，RLock 方法
+会一直阻塞，直到能获取到锁，否则就直接返回；而 RUnlock 是 reader 释放锁的方
+法。
+3. `RLocker`：这个方法的作用是**为读操作返回一个 Locker 接口的对象**。它的 Lock 方法会
+调用 RWMutex 的 RLock 方法，它的 Unlock 方法会调用 RWMutex 的 RUnlock 方
+法
+> RWMutex 的零值是未加锁的状态，所以，当你使用 RWMutex 的时候，无论是声明变
+量，还是嵌入到其它 struct 中，**都不必显式地初始化**.
+> 遇到可以明确区分 reader 和 writer goroutine 的场景，且有大量的并发读、少量
+的并发写，并且有强烈的性能需求，你就可以考虑使用读写锁 RWMutex 替换 Mutex
+>
+
+### RWMutex 的实现原理
+RWMutex 是很常见的并发原语，很多编程语言的库都提供了类似的并发类型。RWMutex
+一般都是**基于互斥锁、条件变量（condition variables）或者信号量（semaphores）**等
+并发原语来实现。Go 标准库中的 RWMutex 是基于 Mutex 实现的。
+`readers-writers `问题一般有三类，基于对读和写操作的优先级，读写锁的设计和实现也分
+成三类:
+1. `Read-preferring`：读优先的设计可以提供很高的并发性，但是，在竞争激烈的情况下
+可能会导致**写饥饿**。这是因为，如果有大量的读，这种设计会导致只有所有的读都释放
+了锁之后，写才可能获取到锁。
+2. `Write-preferring`：写优先的设计意味着，如果已经有一个 writer 在等待请求锁的
+话，它会阻止新来的请求锁的 reader 获取到锁，所以优先保障 writer。当然，如果有
+一些 reader 已经请求了锁的话，新请求的 writer 也会等待已经存在的 reader 都释放
+锁之后才能获取。所以，写优先级设计中的优先权是针对新来的请求而言的。这种设计
+主要避免了 writer 的饥饿问题,但是可能会导致**读饥饿**。
+3. 不指定优先级：这种设计比较简单，不区分 reader 和 writer 优先级，某些场景下这种
+不指定优先级的设计反而更有效，因为第一类优先级会导致写饥饿，第二类优先级可能会导致读饥饿，这种不指定优先级的访问不再区分读写，大家都是同一个优先级，解决了饥饿的问题。
+> Go 标准库中的 RWMutex 设计是 Write-preferring 方案。一个正在阻塞的 Lock 调用
+会排除新的 reader 请求到锁。
+>
+RWMutex 包含一个 Mutex，以及四个辅助字段 writerSem、readerSem、readerCount
+和 readerWait：
+```go
+type RWMutex struct {
+w Mutex // 互斥锁解决多个writer的竞争
+writerSem uint32 // writer信号量
+readerSem uint32 // reader信号量
+readerCount int32 // reader的数量
+readerWait int32 // writer等待完成的reader的数量
+}
+const rwmutexMaxReaders = 1 << 30
+```
+1. 字段 w：为 writer 的竞争锁而设计；
+2. 字段 readerCount：记录当前 reader 的数量（以及是否有 writer 竞争锁）；
+   * 没有 writer 竞争或持有锁时，readerCount 和我们正常理解的 reader 的计数是一样
+   的；
+   * 但是，如果有 writer 竞争锁或者持有锁时，那么，readerCount 不仅仅承担着 reader
+   的计数功能，还能够标识当前是否有 writer 竞争或持有锁，在这种情况下，请求锁的
+   reader 的处理变成阻塞等待锁的释放。
+3. readerWait：记录 writer 请求锁时需要等待 read 完成的 reader 的数量；
+4. writerSem 和 readerSem：都是为了阻塞设计的信号量。
+5. 常量 rwmutexMaxReaders，定义了最大的 reader 数量。
+
+#### RWMutex 的 RLock、RUlock、rUnlockSlow 方法
+![img.png](./attach/img.png)
+![img.png](./attach/img_1.png)
+1.  `Add` 的返回值还有另外一个含义。如果它是**负值**，就表示当前**有 writer 竞争锁**，在这种情况下，还会调用 rUnlockSlow 方法，检查是不是reader 都释放读锁了，如果读锁都释放了，那么可以唤醒请求写锁的 writer 了。当一个或者多个 reader 持有锁的时候，竞争锁的 writer 会等待这些 reader 释放完，才可能持有这把锁。
+
+
+#### RWMutex 的 Lock、Unlock、unlockSlow 方法
+1. Lock:
+![img.png](./attach/img_2.png)
+RWMutex 是一个多 writer 多 reader 的读写锁，所以同时可能有多个 writer 和 reader。
+那么，为了避免 writer 之间的竞争，RWMutex 就会使用一个 Mutex 来保证 writer 的互
+斥。<br/>
+一旦一个 writer 获得了内部的互斥锁，就会反转 readerCount 字段，把它从原来的正整
+数 readerCount(>=0) 修改为负数（readerCount-rwmutexMaxReaders），让这个字段
+保持两个含义（既保存了 reader 的数量，又表示当前有 writer）。<br/>
+如果 readerCount 不是 0，就说明当前有持有读锁的 reader，RWMutex 需要把这个当
+前 readerCount 赋值给 readerWait 字段保存下来， 同时，这个 writer 进入
+阻塞等待状态。
+每当一个 reader 释放读锁的时候（调用 RUnlock 方法时），readerWait 字段就减 1，直
+到所有的活跃的 reader 都释放了读锁，才会唤醒这个 writer。
+2. Unlock: 
+![img.png](./attach/img_3.png)
+当一个 writer 释放锁的时候，它会再次反转 readerCount 字段。这里的反转方法就是给它增加
+rwmutexMaxReaders 这个常数值。<br/>
+既然 writer 要释放锁了，那么就需要唤醒之后新来的 reader，不必再阻塞它们了，让它们
+开开心心地继续执行就好了。<br/>
+在 RWMutex 的 Unlock 返回之前，需要把内部的互斥锁释放。释放完毕后，其他的
+writer 才可以继续竞争这把锁。
+
+
+### RWMutex 3个踩坑点
+1. 不可复制.
+前面刚刚说过，RWMutex 是由一个互斥锁和四个辅助字段组成的。我们很容易想到，互斥锁是不可复制的，再加上四个有状态的字段，RWMutex 就更加不能复制使用了。不能复制的原因和互斥锁一样。一旦读写锁被使用，它的字段就会记录它当前的一些状态。这个时候你去复制这把锁，就会把它的状态也给复制过来。但是，原来的锁在释放的时候，并不会修改你复制出来的这个读写锁，这就会导致复制出来的读写锁的状态不对，可能永远无法释放锁.那该怎么办呢？其实，解决方案也和互斥锁一样。你可以借助 vet 工具，在变量赋值、函数传参、函数返回值、遍历数据、struct 初始化等时，检查是否有读写锁隐式复制的情景。
+2. 重入导致死锁. 三种情况：
+   * 因为读写锁内部基于互斥锁实现对 writer 的并发访问，而互斥锁本身是有重入问题的，所以，writer 重入调用 Lock 的时候，就会出现死锁的现象.例子：[2_reentrant_deat_lock.go](study-project-1%2F2_RWMutex%2F2_reentrant_deat_lock.go)
+    * 有活跃 reader 的时候，writer 会等待，如果我们在 reader 的读操作时调用 writer 的写操作（它会调用 Lock 方法），那么，这个 reader和 writer 就会形成互相依赖的死锁状态。Reader 想等待 writer 完成后再释放锁，而writer 需要这个 reader 释放锁之后，才能不阻塞地继续执行。这是一个读写锁常见的死锁场景。 
+    * 当一个 writer 请求锁的时候，如果已经有一些活跃的 reader，它会等待这些活跃的reader 完成，才有可能获取到锁，但是，如果之后活跃的 reader 再依赖新的 reader 的话，这些新的 reader 就会等待 writer 释放锁之后才能继续执行，这就形成了一个环形依赖： writer 依赖活跃的 reader -> 活跃的 reader 依赖新来的 reader -> 新来的 reader依赖 writer。例子：[3_reetrant_n_factorial.go](study-project-1%2F2_RWMutex%2F3_reetrant_n_factorial.go)
+     ![img.png](./attach/img_4.png)   
+   > 所以，使用读写锁最需要注意的一点就是尽量避免重入，重入带来的死锁非常隐蔽，而且
+   难以诊断。
+   > 
+3. 释放未加锁的 RWMutex
+   和互斥锁一样，Lock 和 Unlock 的调用总是成对出现的，RLock 和 RUnlock 的调用也必
+   须成对出现。Lock 和 RLock 多余的调用会导致锁没有被释放，可能会出现死锁，而Unlock 和 RUnlock 多余的调用会导致 panic.
+
+### RWMutex 总结
+![img.png](./attach/img_5.png)
+![img.png](./attach/img_6.png)
