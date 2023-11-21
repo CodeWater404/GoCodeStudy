@@ -33,6 +33,16 @@ race -S counter.go`)
 ## CAS
 CAS 指令将给定的值和一个内存地址中的值进行比较，如果它们是同一个值，就使用新值替换内存地址中的值，这个操作是原子性的。
 
+## go:linkname
+go:linkname 是 Go 语言的一个编译器指令，它可以将一个 Go 语言的标识符链接到另一个标识符。这个指令通常用于实现一些底层的功能，例如访问和修改运行时系统的内部状态。
+
+go:linkname 指令的语法是：
+```go
+//go:linkname localname importpath.name
+```
+其中，`localname` 是本地的标识符，`importpath.name` 是要链接的标识符。这个指令会将 localname 链接到 importpath.name，这样在代码中就可以通过 localname 来访问和修改 importpath.name 的值。
+
+需要注意的是，go:linkname 指令**会破坏 Go 语言的封装性，因为它可以访问和修改任何标识符，包括私有的标识符**。因此，除非你非常清楚你在做什么，否则不应该使用这个指令。
 
 ## Mutex
 * `state`:
@@ -413,3 +423,136 @@ fmt.Println("Finished")
 ### WaitGroup 总结
 ![img.png](./attach/img_9.png)
 ![img.png](./attach/img_10.png)
+
+## Cond:条件变量
+Go 标准库提供 Cond 原语的目的是，为等待 / 通知场景下的并发问题提供支持。Cond 通
+常应用于等待某个条件的一组 goroutine，等条件变为 true 的时候，其中一个 goroutine 或者所有的 goroutine 都会被唤醒执行。<br/>
+顾名思义，Cond 是和某个条件相关，这个条件需要一组 goroutine 协作共同完成，在条 件还没有满足的时候，所有等待这个条件的 goroutine 都会被阻塞住，只有这一组goroutine 通过协作达到了这个条件，等待的 goroutine 才可能继续进行下去。<br/>
+那这里等待的条件是什么呢？等待的条件，可以是某个变量达到了某个阈值或者某个时间点，也可以是一组变量分别都达到了某个阈值，还可以是某个对象的状态满足了特定的条 件。总结来讲，等待的条件是一种可以用来计算结果是 true 还是 false 的条件.<br/>
+使用 Cond 的场景比较少，因为一旦遇到需要使用 Cond 的场景，我们更多地会使用 Channel 的方式去实现，因为那才是更地道的 Go 语言的写法。
+
+### Cond 的基本用法
+标准库中的 Cond 并发原语初始化的时候，需要关联一个 Locker 接口的实例，一般我们 使用 Mutex 或者 RWMutex。
+首先，Cond 关联的 Locker 实例可以通过 c.L 访问，它内部维护着一个先入先出的等待队
+列。 然后，我们分别看下它的三个方法 Broadcast、Signal 和 Wait 方法。
+1. `Signal` 方法，允许调用者 Caller 唤醒一个等待此 Cond 的 goroutine。如果此时没有等待的 goroutine，显然无需通知 waiter；如果 Cond 等待队列中有一个或者多个等待的 goroutine，则需要从等待队列中移除第一个 goroutine 并把它唤醒。在其他编程语言中，比如 Java 语言中，Signal 方法也被叫做 notify 方法。调用 Signal 方法时，不强求你一定要持有 c.L 的锁。
+2. `Broadcast` 方法，允许调用者 Caller 唤醒所有等待此 Cond 的 goroutine。如果此时没有等待的 goroutine，显然无需通知 waiter；如果 Cond 等待队列中有一个或者多个等待的 goroutine，则清空所有等待的 goroutine，并全部唤醒。在其他编程语言中，比如 Java 语言中，Broadcast 方法也被叫做 notifyAll 方法。同样地，调用 Broadcast 方法时，也不强求你一定持有 c.L 的锁。
+3. `Wait` 方法，会把调用者 Caller 放入 Cond 的等待队列中并阻塞，直到被 Signal 或者Broadcast 的方法从等待队列中移除并唤醒。调用 Wait 方法时**必须要持有** c.L 的锁。<br/>
+
+例子：[1_cond_example.go](study-project-1%2F4_Cond%2F1_cond_example.go)
+
+### Cond 的实现原理
+其实，Cond 的实现非常简单，或者说复杂的逻辑已经被 Locker 或者 runtime 的等待队
+列实现了。
+```go
+type Cond struct {
+    noCopy noCopy
+    // 当观察或者修改等待条件的时候需要加锁
+    L Locker
+    // 等待队列
+    notify notifyList
+    checker copyChecker
+}
+func NewCond(l Locker) *Cond {
+    return &Cond{L: l}
+}
+
+func (c *Cond) Wait() {
+    c.checker.check()
+    // 增加到等待队列中
+    t := runtime_notifyListAdd(&c.notify)
+    c.L.Unlock()
+    // 阻塞休眠直到被唤醒
+    runtime_notifyListWait(&c.notify, t)
+    c.L.Lock()
+}
+func (c *Cond) Signal() {
+    c.checker.check()
+    runtime_notifyListNotifyOne(&c.notify)
+}
+func (c *Cond) Broadcast() {
+    c.checker.check()
+    runtime_notifyListNotifyAll(&c.notify)
+}
+```
+runtime_notifyListXXX 是运行时实现的方法，实现了一个等待 / 通知的队列。
+
+copyChecker 是一个辅助结构，可以在运行时检查 Cond 是否被复制使用。
+
+Signal 和 Broadcast 只涉及到 notifyList 数据结构，不涉及到锁。
+
+Wait 把调用者加入到等待队列时会释放锁，在被唤醒之后还会请求锁。在阻塞休眠期间，
+调用者是不持有锁的，这样能让其他 goroutine 有机会检查或者更新等待变量。
+
+### Cond 的常见错误
+1. 是调用 Wait 的时候没有加锁.
+    ```go
+    func main() {
+        c := sync.NewCond(&sync.Mutex{})
+        var ready int
+        for i := 0; i < 10; i++ {
+            go func(i int) {
+                time.Sleep(time.Duration(rand.Int63n(10)) * time.Second)
+                // 加锁更改等待条件
+                c.L.Lock()
+                ready++
+                c.L.Unlock()
+                log.Printf("运动员#%d 已准备就绪\n", i)
+                // 广播唤醒所有的等待者
+                c.Broadcast()
+            }(i)
+        }
+        // c.L.Lock() //没加上锁
+        for ready != 10 {
+            c.Wait()
+            log.Println("裁判员被唤醒一次")
+        }
+        // c.L.Unlock()
+        //所有的运动员是否就绪
+        log.Println("所有运动员都准备就绪。比赛开始，3，2，1, ......")
+    }
+    ```
+   出现这个问题的原因在于，cond.Wait 方法的实现是，把当前调用者加入到 notify 队列之中后会释放锁（如果不释放锁，其他 Wait 的调用者就没有机会加入到 notify 队列中了），然后一直等待；等调用者被唤醒之后，又会去争抢这把锁。如果调用 Wait 之前不加锁的话，就**有可能 Unlock 一个未加锁的 Locker**。所以切记，调用 cond.Wait 方法之前一定要加锁。
+2. 只调用了一次 Wait，没有检查等待条件是否满足，结果条件没满足，程序就继续执行了。出现这个问题的原因在于，误以为 Cond 的使用，就像WaitGroup 那样调用一下 Wait 方法等待那么简单。比如：
+    ```go
+    func main() {
+         c := sync.NewCond(&sync.Mutex{})
+         var ready int
+		 for i := 0; i < 10; i++ {
+            go func(i int) {
+                time.Sleep(time.Duration(rand.Int63n(10)) * time.Second)
+                // 加锁更改等待条件
+                c.L.Lock()
+                ready++
+                c.L.Unlock()
+                log.Printf("运动员#%d 已准备就绪\n", i)
+                // 广播唤醒所有的等待者
+                c.Broadcast()
+            }(i)
+         }
+         c.L.Lock()
+         // for ready != 10 {
+         c.Wait()
+         log.Println("裁判员被唤醒一次")
+         // }
+         c.L.Unlock()
+         //所有的运动员是否就绪
+         log.Println("所有运动员都准备就绪。比赛开始，3，2，1, ......")
+    }
+    ``` 
+      > 一定要记住，waiter goroutine 被唤醒不等于等待条件被满足，只是有
+      goroutine 把它唤醒了而已，等待条件有可能已经满足了，也有可能不满足，我们需要进
+      一步检查。你也可以理解为，等待者被唤醒，只是得到了一次检查的机会而已。
+  
+### Cond 总结
+如果你想在使用 Cond 的时候避免犯错，只要时刻记住调用 **cond.Wait 方法之前一定要加锁**，以及 **waiter goroutine 被唤醒不等于等待条件被满足**这两个知识点。<br/>
+Cond 有三点特性是 Channel 无法替代的：
+1. Cond 和一个 Locker 关联，可以利用这个 Locker 对相关的依赖条件更改提供保护。
+2. Cond 可以同时支持 Signal 和 Broadcast 方法，而 Channel 只能同时支持其中一种。
+3. Cond 的 Broadcast 方法可以被重复调用。等待条件再次变成不满足的状态后，我们又可以调用 Broadcast 再次唤醒等待的 goroutine。这也是 Channel 不能支持的，
+4. Channel 被 close 掉了之后不支持再 open。
+
+WaitGroup 和 Cond 是有本质上的区别的：
+* WaitGroup 是主 goroutine 等待确定数量的子goroutine 完成任务；而 Cond 是等待某个条件满足，这个条件的修改可以被任意多的goroutine 更新，
+* 而且 Cond 的 Wait 不关心也不知道其他 goroutine 的数量，只关心等待条件。而且 Cond 还有单个通知的机制，也就是 Signal 方法。
+![img.png](./attach/img_11.png)
