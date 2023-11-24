@@ -556,3 +556,105 @@ WaitGroup 和 Cond 是有本质上的区别的：
 * WaitGroup 是主 goroutine 等待确定数量的子goroutine 完成任务；而 Cond 是等待某个条件满足，这个条件的修改可以被任意多的goroutine 更新，
 * 而且 Cond 的 Wait 不关心也不知道其他 goroutine 的数量，只关心等待条件。而且 Cond 还有单个通知的机制，也就是 Signal 方法。
 ![img.png](./attach/img_11.png)
+
+
+## Once:只执行一次
+Once 可以用来执行且仅仅执行一次动作，常常用于单例对象的初始化场景。
+单例对象的初始化，通常有：
+1. 通过包级变量来初始化
+2. 通过 init 函数来初始化
+3. 通过main函数中调用对应初始化函数来初始化
+这几种都是线程安全的,还有通过`mutex`来实现单例对象初始化的：[1_single_mutex.go](study-project-1%2F5_Once%2F1_single_mutex.go)
+这种方式虽然实现起来简单，但是有性能问题。一旦连接创建好，每次请求的时候还是得竞争锁才能读取到这个连接，这是比较浪费资源的，因为连接如果创建好之后，其实就不需要锁的保护了。所以，我们需要一种更好的方式来实现单例对象的初始化，这就是 `Once`。
+
+### Once使用场景
+sync.Once 只暴露了一个方法 Do，你可以多次调用 Do 方法，但是只有第一次调用 `Do` 方法时 f 参数才会执行，这里的 f 是一个无参数无返回值的函数。
+`func (o *Once) Do(f func())`
+即使第二次、第三次、第 n 次调用时 f 参数的值不一样，也不会被执行，比如下面的例子:[2_call_once.go](study-project-1%2F5_Once%2F2_call_once.go)
+
+* 将值和 Once 封装成一个新的数据结构，提供只初始化一次的值。你看它的 three 方法的实现，虽然每次都调用 threeOnce.Do 方法，但是参数只会被调用一次。
+```go
+// 值是3.0或者0.0的一个数据结构
+var threeOnce struct {
+    sync.Once
+    v *Float
+}
+// 返回此数据结构的值，如果还没有初始化为3.0，则初始化
+func three() *Float {
+        threeOnce.Do(func() { // 使用Once初始化
+        threeOnce.v = NewFloat(3.0)
+    })
+    return threeOnce.v
+}
+```
+> 总结一下 Once 并发原语解决的问题和使用场景：Once 常常用来初始化单例资源，或者
+并发访问只需初始化一次的共享资源，或者在测试的时候初始化一次测试资源。
+> 
+
+
+### Once的实现原理
+一个正确的 Once 实现要使用一个互斥锁，这样初始化的时候如果有并发的
+goroutine，就会进入doSlow 方法。互斥锁的机制保证只有一个 goroutine 进行初始
+化，同时利用双检查的机制（double-checking），再次判断 o.done 是否为 0，如果为
+0，则是第一次执行，执行完毕后，就将 o.done 设置为 1，然后释放锁.
+![img.png](./attach/img-8.png)
+
+ 
+### Once的常见错误
+
+#### 第一种错误：死锁
+Do 方法会执行一次 f，但是如果 f 中再次调用这个 Once 的 Do 方法的话，就会导致死锁的情况出现。这还不是无限递归的情况，而是的的确确的 Lock 的递归调用导 致的死锁.
+```go
+func main() {
+    var once sync.Once
+    once.Do(func() {
+        once.Do(func() {
+            fmt.Println("初始化")
+        })
+    })
+}
+```
+想要避免这种情况的出现，就不要在 f 参数中调用当前的这个 Once，不管是直接的还是间接的。
+
+#### 第二种错误：未初始化
+如果 f 方法执行的时候 panic，或者 f 执行初始化资源的时候失败了，这个时候，Once 还是会认为初次执行已经成功了，即使再次调用 Do 方法，也不会再次执行 f。
+```go
+func main() {
+    var once sync.Once
+    var googleConn net.Conn // 到Google网站的一个连接
+    once.Do(func() {
+        // 建立到google.com的连接，有可能因为网络的原因，googleConn并没有建立成功，此时它
+        googleConn, _ = net.Dial("tcp", "google.com:80")
+    })
+    // 发送http请求
+    googleConn.Write([]byte("GET / HTTP/1.1\r\nHost: google.com\r\n Accept: */
+    io.Copy(os.Stdout, googleConn)
+}
+```
+既然执行过 Once.Do 方法也可能因为函数执行失败的原因未初始化资源，并且以后也没机
+会再次初始化资源，那么我们就需要处理这种情况，比如，可以**自己实现一个类似 Once 的并发原语**，既可以*返回当前调用 Do 方法是否正确完成，还可以在初始化失败后调用 Do 方法再次尝试初始化，直到初始化成功才不再初始化了。*例子：[4_rewrite_once.go](study-project-1%2F5_Once%2F4_rewrite_once.go)
+<br/>
+还有个问题，我们怎么查询是否初始化过呢？<br/>
+目前的 Once 实现可以保证你调用任意次数的 once.Do 方法，它只会执行这个方法一次。但是，有时候我们需要打一个标记。如果初始化后我们就去执行其它的操作，标准库的Once 并不会告诉你是否初始化完成了，只是让你放心大胆地去执行 Do 方法，所以，你还需要一个辅助变量，自己去检查是否初始化过了,比如通过下面的代码中的 `inited` 字段：
+```go
+type AnimalStore struct {once sync.Once;inited uint32}
+func (a *AnimalStore) Init() // 可以被并发调用
+    a.once.Do(func() {
+        longOperationSetupDbOpenFilesQueuesEtc()
+        atomic.StoreUint32(&a.inited, 1)
+    })
+}
+func (a *AnimalStore) CountOfCats() (int, error) { // 另外一个goroutine
+    if atomic.LoadUint32(&a.inited) == 0 { // 初始化后才会执行真正的业务逻辑
+    return 0, NotYetInitedError
+}
+//Real operation
+}
+```
+例子：[5_extend_once.go](study-project-1%2F5_Once%2F5_extend_once.go)
+> 使用 Once 真的不容易犯错，想犯错都很困难，因为很少有人会傻傻地在初始化函数 f 中递归调用 f，这种死锁的现象几乎不会发生。另外如果函数初始化不成功，我们一般会 panic，或者在使用的时候做检查，会及早发现这个问题，在初始化函数中加强代码。<br/>
+> 一旦你遇到只需要初始化一次的场景，首先想到的就应该是 Once 并发原语.而且，Once 不只应用于单例模式，一些变量在也需要在使用的时候做延迟初始化，所以也是可以使用 Once 处理这些场景的.
+
+
+### Once总结
+![img.png](./attach/img_12.png)
