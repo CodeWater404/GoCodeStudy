@@ -658,3 +658,204 @@ func (a *AnimalStore) CountOfCats() (int, error) { // 另外一个goroutine
 
 ### Once总结
 ![img.png](./attach/img_12.png)
+
+## 线程安全的map
+哈希表（Hash Table）这个数据结构，我们已经非常熟悉了。它实现的就是 key-value 之 间的映射关系，主要提供的方法包括 Add、Lookup、Delete 等。因为这种数据结构是一 个基础的数据结构，每个 key 都会有一个唯一的索引值，通过索引可以很快地找到对应的 值，所以使用哈希表进行数据的插入和读取都是很快的。Go 语言本身就内建了这样一个数 据结构，也就是 map 数据类型。<br/>
+map 的类型是 map[key]，key 类型的 K 必须是可比较的，通常情况下，我们会选择内建的基本类型，比如整数、字符串做 key 的类型。如果要使用 struct 作为 key，我们要保证 struct 对象在逻辑上是不可变的。在Go中，map[key]函数返回结果可以是一个值，也可以是两个值。map 是无序的，如果我们想要保证遍历 map 时元素有序，可以使用辅助的数据结构，比如orderedmap。<br/>
+Go 内建的 map 对象不是线程（goroutine）安全的，并发读写的时候运行时会有检查， 遇到并发问题就会导致 panic.[1_concurrent_read_write_map.go](study-project-1%2F6_Map%2F1_concurrent_read_write_map.go)<br/>
+手动实现线程安全的map：[2_safe_map.go](study-project-1%2F6_Map%2F2_safe_map.go)
+<br/>
+`sync.Map` 并不是用来替换内建的 map 类型 的，它只能被应用在一些特殊的场景里，在以下两个场景中使用 sync.Map，会比使用 map+RWMutex 的方式，性能要好得多：：
+1. 只会增长的缓存系统中，一个 key 只写入一次而被读很多次；
+2. 多个 goroutine 为不相交的键集读、写和重写键值对
+
+所以，官方建议你针对自己的场景做性能评测，如果确实能够显著提高性能，再使用 sync.Map。
+
+### sync.Map的实现
+其实 sync.Map 的实现有几个优化点，这里先列出来：
+1. 空间换时间。通过冗余的两个数据结构（只读的 read 字段、可写的 dirty），来减少加锁对性能的影响。对只读字段（read）的操作不需要加锁。
+2. 优先从 read 字段读取、更新、删除，因为对 read 字段的读取不需要锁。
+3. 动态调整。miss 次数多了之后，将 dirty 数据提升为 read，避免总是从 dirty 中加锁读 取。
+4. double-checking。加锁之后先还要再检查 read 字段，确定真的不存在才操作 dirty 字段。
+5. 延迟删除。删除一个键值只是打标记，只有在提升 dirty 字段为 read 字段的时候才清理删除的数据
+
+```go
+package  sync
+
+type Map struct {
+    mu Mutex
+    // 基本上你可以把它看成一个安全的只读的map
+    // 它包含的元素其实也是通过原子操作更新的，但是已删除的entry就需要加锁操作了
+    read atomic.Value // readOnly
+    // 包含需要加锁才能访问的元素
+    // 包括所有在read字段中但未被expunged（删除）的元素以及新加的元素
+    dirty map[interface{}]*entry
+    // 记录从read中读取miss的次数，一旦miss数和dirty长度一样了，就会把dirty提升为read，
+    misses int
+}
+type readOnly struct {
+    m map[interface{}]*entry
+    amended bool // 当dirty中包含read没有的数据时为true，比如新增一条数据
+}
+// expunged是用来标识此项已经删掉的指针
+// 当map中的一个项目被删除了，只是把它的值标记为expunged，以后才有机会真正删除此项
+var expunged = unsafe.Pointer(new(interface{}))
+// entry代表一个值
+type entry struct {
+    p unsafe.Pointer // *interface{}
+}
+```
+如果 dirty 字段非 nil 的话，map 的 read 字段和 dirty 字段会包含相同的非 expunged的项，所以如果通过 read 字段更改了这个项的值，从 dirty 字段中也会读取到这个项的新值，因为本来它们指向的就是同一个地址。<br/>
+dirty 包含重复项目的好处就是，一旦 miss 数达到阈值需要将 dirty 提升为 read 的话，只 需简单地把 dirty 设置为 read 对象即可。不好的一点就是，当创建新的 dirty 对象的时 候，需要逐条遍历 read，把非 expunged 的项复制到 dirty 对象中。<br/>
+`Store`、`Load` 和` Delete` 这三个核心函数的操作都是先从 read 字段中处理的，因为读取 read 字段的时候不用加锁。
+
+#### Store
+它是用来设置一个键值对，或者更新一个键值对的.
+```go
+func (m *Map) Store(key, value interface{}) {
+    read, _ := m.read.Load().(readOnly)
+    // 如果read字段包含这个项，说明是更新，cas更新项目的值即可
+    if e, ok := read.m[key]; ok && e.tryStore(&value) {
+        return
+    }
+    // read中不存在，或者cas更新失败，就需要加锁访问dirty了
+    m.mu.Lock()
+    read, _ = m.read.Load().(readOnly)
+    if e, ok := read.m[key]; ok { // 双检查，看看read是否已经存在了
+        if e.unexpungeLocked() {
+        // 此项目先前已经被删除了，通过将它的值设置为nil，标记为unexpunged
+            m.dirty[key] = e
+        }
+        e.storeLocked(&value) // 更新
+    } else if e, ok := m.dirty[key]; ok { // 如果dirty中有此项
+        e.storeLocked(&value) // 直接更新
+    } else { // 否则就是一个新的key
+        if !read.amended { //如果dirty为nil
+            // 需要创建dirty对象，并且标记read的amended为true,
+            // 说明有元素它不包含而dirty包含
+            m.dirtyLocked()
+            m.read.Store(readOnly{m: read.m, amended: true})
+        }
+        m.dirty[key] = newEntry(value) //将新值增加到dirty对象中
+    }
+    m.mu.Unlock()
+}
+```
+可以看出，Store 既可以是新增元素，也可以是更新元素。如果运气好的话，更新的是已
+存在的未被删除的元素，直接更新即可，不会用到锁。如果运气不好，需要更新（重用）
+删除的对象、更新还未提升的 dirty 中的对象，或者新增加元素的时候就会使用到了锁，这
+个时候，性能就会下降。<br/>
+所以从这一点来看，sync.Map 适合那些只会增长的缓存系统，可以进行更新，但是不要删
+除，并且不要频繁地增加新元素。<br/>
+新加的元素需要放入到 dirty 中，如果 dirty 为 nil，那么需要从 read 字段中复制出来一个dirty 对象：
+```go
+func (m *Map) dirtyLocked() {
+    if m.dirty != nil { // 如果dirty字段已经存在，不需要创建了
+        return
+    }
+    read, _ := m.read.Load().(readOnly) // 获取read字段
+    m.dirty = make(map[interface{}]*entry, len(read.m))
+    for k, e := range read.m { // 遍历read字段
+        if !e.tryExpungeLocked() { // 把非punged的键值对复制到dirty中
+            m.dirty[k] = e
+        }
+    }
+}
+```
+
+#### Load
+Load 方法用来读取一个 key 对应的值。它也是从 read 开始处理，一开始并不需要锁。
+```go
+func (m *Map) Load(key interface{}) (value interface{}, ok bool) {
+    // 首先从read处理
+    read, _ := m.read.Load().(readOnly)
+    e, ok := read.m[key]
+    if !ok && read.amended { // 如果不存在并且dirty不为nil(有新的元素)
+        m.mu.Lock()
+        // 双检查，看看read中现在是否存在此key
+        read, _ = m.read.Load().(readOnly)
+        e, ok = read.m[key]
+        if !ok && read.amended {//依然不存在，并且dirty不为nil
+            e, ok = m.dirty[key]// 从dirty中读取
+            // 不管dirty中存不存在，miss数都加1
+            m.missLocked()
+        }
+         m.mu.Unlock()
+    }
+    if !ok {
+        return nil, false
+    }
+    return e.load() //返回读取的对象，e既可能是从read中获得的，也可能是从dirty中获得的
+}
+```
+如果幸运的话，我们从 read 中读取到了这个 key 对应的值，那么就不需要加锁了，性能
+会非常好。但是，如果请求的 key 不存在或者是新加的，就需要加锁从 dirty 中读取。所
+以，读取不存在的 key 会因为加锁而导致性能下降，读取还没有提升的新值的情况下也会
+因为加锁性能下降。<br/>
+其中，missLocked 增加 miss 的时候，如果 miss 数等于 dirty 长度，会将 dirty 提升为read，并将 dirty 置空。
+```go
+func (m *Map) missLocked() {
+    m.misses++ // misses计数加一
+    if m.misses < len(m.dirty) { // 如果没达到阈值(dirty字段的长度),返回
+        return
+    }
+    m.read.Store(readOnly{m: m.dirty}) //把dirty字段的内存提升为read字段
+    m.dirty = nil // 清空dirty
+    m.misses = 0 // misses数重置为0
+}
+```
+
+#### Delete
+sync.map 的第 3 个核心方法是 Delete 方法。在 Go 1.15 中欧长坤提供了一个
+LoadAndDelete 的实现（go#issue 33762），所以 Delete 方法的核心改在了对
+LoadAndDelete 中实现了。<br/>
+同样地，Delete 方法是先从 read 操作开始，原因我们已经知道了，因为不需要锁。
+```go
+func (m *Map) LoadAndDelete(key interface{}) (value interface{}, loaded bool) {
+    read, _ := m.read.Load().(readOnly)
+    e, ok := read.m[key]
+    if !ok && read.amended {
+        m.mu.Lock()
+        // 双检查
+        read, _ = m.read.Load().(readOnly)
+        e, ok = read.m[key]
+        if !ok && read.amended {
+            e, ok = m.dirty[key]
+            // 这一行长坤在1.15中实现的时候忘记加上了，导致在特殊的场景下有些key总是没有被回收
+            delete(m.dirty, key)
+            // miss数加1
+            m.missLocked()
+        }
+        m.mu.Unlock()
+	}
+    if ok {
+        return e.delete()
+    }
+    return nil, false
+}
+func (m *Map) Delete(key interface{}) {
+    m.LoadAndDelete(key)
+}
+func (e *entry) delete() (value interface{}, ok bool) {
+    for {
+        p := atomic.LoadPointer(&e.p)
+        if p == nil || p == expunged {
+            return nil, false
+        }
+        if atomic.CompareAndSwapPointer(&e.p, p, nil) {
+            return *(*interface{})(p), true
+        }
+    }
+}
+```
+如果 read 中不存在，那么就需要从 dirty 中寻找这个项目。最终，如果项目存在就删除 （将它的值标记为 nil）。如果项目不为 nil 或者没有被标记为 `expunged`，那么还可以把它的值返回。<br/>
+最后，我补充一点，sync.map 还有一些 LoadAndDelete、LoadOrStore、Range 等辅
+助方法，但是没有 Len 这样查询 sync.Map 的包含项目数量的方法，并且官方也不准备提
+供。如果你想得到 sync.Map 的项目数量的话，你可能不得不通过 Range 逐个计数。
+
+### 总结
+Go 内置的 map 类型使用起来很方便，但是它有一个非常致命的缺陷，那就是它存在着并发问题，所以如果有多个 goroutine 同时并发访问这个 map，就会导致程序崩溃。所以 Go 官方 Blog 很早就提供了一种加锁的方法，还有后来提供了适用特定场景的线程安全 的 sync.Map，还有第三方实现的分片式的 map，这些方法都可以应用于并发访问的场景。<br/>
+这里我给你的建议，也是 Go 开发者给的建议，就是通过性能测试，看看某种线程安全的 map 实现是否满足你的需求。<br/>
+当然还有一些扩展其它功能的 map 实现，比如带有过期功能的`timedmap`、使用红黑树 实现的 key 有序的`treemap`等。
+![img.png](./attach/img_13.png)
+![img.png](./attach/img_14.png)
