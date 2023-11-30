@@ -25,6 +25,10 @@ protoc --go-grpc_out=. hello.proto  //生成grpc文件，对应hello_grpc.pb.go
 ```
 
 # 代码编写基本流程
+1. 先写对应的`proto`文件，然后用命令生成go文件和grpc文件
+2. go代码编写，详细参考下面流程
+
+
 ## 服务端编写
 1. 创建gRPC Server对象，你可以理解为它是Server端的抽象对象
 2. 将server(其包含需要被调闲的服务端接口)注册到gRPC Server的内部注册中心。 这样可以在接受到请求时，通过内部的服务发现，发现该服务端接口并转接进行罗银处理
