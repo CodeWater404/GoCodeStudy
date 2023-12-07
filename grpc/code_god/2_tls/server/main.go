@@ -1,7 +1,7 @@
 package main
 
 import (
-	pb "code_god/1_example/proto"
+	pb "code_god/2_tls/proto"
 	"context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -16,12 +16,12 @@ import (
 	单向认证:有中间人攻击
 **/
 
-type ProductService struct {
+type ProductService1 struct {
 	pb.UnimplementedProductServiceServer
 }
 
 // GetProductStock 实现服务端接口
-func (p *ProductService) GetProductStock(ctx context.Context, req *pb.ProductRequest) (*pb.ProductResponse, error) {
+func (p *ProductService1) GetProductStock(ctx context.Context, req *pb.ProductRequest) (*pb.ProductResponse, error) {
 	log.Printf("server received prodId:%v , prodName:%v\n", req.GetProdId(), req.GetProdName())
 	return &pb.ProductResponse{ProdStack: 1, ProdPrice: 100}, nil
 }
@@ -35,7 +35,7 @@ func main() {
 	}
 
 	server := grpc.NewServer(grpc.Creds(file)) // 相比没有加密的，这里只是多了一个Creds
-	pb.RegisterProductServiceServer(server, &ProductService{})
+	pb.RegisterProductServiceServer(server, &ProductService1{})
 
 	listener, err := net.Listen("tcp", ":8002")
 	if err != nil {

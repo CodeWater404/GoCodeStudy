@@ -26,6 +26,8 @@ protoc --go-grpc_out=. hello.proto  //生成grpc文件，对应hello_grpc.pb.go
 
 7. **client.pem**: 这是客户端的证书文件，包含客户端的公钥。由 CA 签名，用于验证客户端身份。
 
+> `pem`:是基于Base64编码的证书格式，扩展名包括PEM、CRT和CER。
+
 在 gRPC 中，TLS 主要用于两个目的：
 
 - **身份验证**: 通过证书验证，确保客户端和服务器都是它们声称的实体。
