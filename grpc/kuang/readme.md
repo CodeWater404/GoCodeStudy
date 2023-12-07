@@ -1,6 +1,32 @@
 # source
 bilibili狂神说的grpc教程，仅作为学习参考。
 
+# stream
+在 HTTP/1.1 的时代，同一个时刻只能对一个请求进行处理或者响应，换句话说，下一个请求必须要等当前请求处理完才能继续进行。
+
+> HTTP/1.1需要注意的是，在服务端没有response的时候，客户端是可以发起多个request的，但服务端依旧是顺序对请求进行处理, 并按照收到请求的次序予以返回。
+
+HTTP/2 的时代，多路复用的特性让一次同时处理多个请求成为了现实，并且同一个 TCP 通道中的请求不分先后、不会阻塞，HTTP/2 中引入了流(Stream) 和 帧(Frame) 的概念，当 TCP 通道建立以后，后续的所有操作都是以流的方式发送的，而二进制帧则是组成流的最小单位，属于协议层上的流式传输。
+
+> HTTP/2 在一个 TCP 连接的基础上虚拟出多个 Stream, Stream 之间可以并发的请求和处理, 并且 HTTP/2 以二进制帧 (frame) 的方式进行数据传送, 并引入了头部压缩 (HPACK), 大大提升了交互效率
+
+## 定义
+```protobuf
+  // 普通 RPC
+  rpc SimplePing(PingRequest) returns (PingReply);
+
+  // 客户端流式 RPC
+  rpc ClientStreamPing(stream PingRequest) returns (PingReply);
+
+  // 服务器端流式 RPC
+  rpc ServerStreamPing(PingRequest) returns (stream PingReply);
+
+  // 双向流式 RPC
+  rpc BothStreamPing(stream PingRequest) returns (stream PingReply);
+```
+
+stream关键字，当该关键字修饰参数时，表示这是一个客户端流式的 gRPC 接口；当该参数修饰返回值时，表示这是一个服务器端流式的 gRPC 接口；当该关键字同时修饰参数和返回值时，表示这是一个双向流式的 gRPC 接口。
+
 # install
 1. 官网[下载](https://github.com/protocolbuffers/protobuf/releases?page=2)grpc编译器，然后把安装路径一直到bin文件夹下配置到环境变量中。
 2. 下载go的依赖：
@@ -47,6 +73,11 @@ protoc --go-grpc_out=. hello.proto  //生成grpc文件，对应hello_grpc.pb.go
 3. `crt`:由证书颁发机构(CA)签名后的证书，或者是开发者自签名的证书，包含证书持有人的信息，持有人的公钥，以及签署者的签名等信息。
 4. `pem`:是基于Base64编码的证书格式，扩展名包括PEM、CRT和CER。
 
+## 什么是 SAN？
+
+SAN（Subject Alternative Name）是 SSL 标准 x509 中定义的一个扩展。使用了 SAN 字段的 SSL 证书，可以扩展此证书支持的域名，使得一个证书可以支持多个不同域名的解析。
+
+
 # SSL/TLS认证方式
 ![img.png](img.png)
 ![img_1.png](img_1.png)
@@ -56,32 +87,35 @@ protoc --go-grpc_out=. hello.proto  //生成grpc文件，对应hello_grpc.pb.go
 https://slproweb.com/products/Win32OpenSSL.html
 
 ```
-//生成私钥
+//生成私钥文件(随便输入一个字符密码,这个密码在后面的openssl命令中会要求输入)
 openssl genrsa -out server.key 2048
 
-//生成证书（可以全部回车、不填的；如果需要填写可以看一些提示的什么）
+//生成证书请求（这一步报错看下面的设置，可以全部回车、不填的；如果需要填写可以看一些提示的什么）
 openssl req -new -x509 -key server.key -out server.crt -days 36500
 
-//生成csr文件
-openssl req -new -key server.key -out server.csr
-
+//=======================begin=======================
 //更改openssl.cfg(Linux是openssl.cnf)
 //1)复制一份你安装的openssl的bin目录里面的openssl.cnf文件到你项目所在的目录
-//2)找到[CA_default],打开copy_extensions = copy(就是把前面的#去掉)
+//2)找到[CA_default],copy_extensions = copy(就是把前面的#去掉)
 //3)找到[req].打开req_extensions = v3_req  #The extensions to add to a certificate request
 //4)找到[v3_req],添加subjectAltName = @alt_names
 //5〉添加新的标兹[alt_names],和标签字段
 DNS.1 = *.codewater.com
+//===================================================
 
-//生成证书私胡test.key
-openssl genpkey -algorithm RSA -out test.key
+//生成csr文件
+openssl req -new -key server.key -out server.csr
 
-//通过私钥test.key生成证书请求文件test.csr(注意cfg和cnf)
-openssl req -new -nodes -key test.key -out test.csr -days 3650 -subj "/C=cn/OU=myorg/O=mycomp/CN=myname" -config ./openssl.cfg -extensions v3_req
-//test.csr是上面生成的证书请求文件，ca.crt/server.key是CA证书文件和key,用来对test.csr进行签名认证，这两个义件在第一部分生成。
+
+//生成客户端证书私钥client.key
+openssl genpkey -algorithm RSA -out client.key
+
+//通过私钥client.key生成证书请求文件client.csr(注意cfg和cnf)
+openssl req -new -x509 -nodes -key client.key -out client.csr -days 3650 -subj "/C=cn/OU=myorg/O=mycomp/CN=myname" -config ./openssl.cfg -extensions v3_req
+
+//client.csr是上面生成的证书请求文件，ca.crt/server.key是CA证书文件和key,用来对client.csr进行签名认证，这两个义件在第一部分生成。
 
 //生成SAN证书 pem
-openssl x509 -req -days 365 -in test.csr -out test.pem -CA server.crt -CAkey server.key -CAcreateserial -extfile
-./openssl.cnf -extensions v3_req
+openssl x509 -req -days 365 -in client.csr -out client.pem -CA server.crt -CAkey server.key -CAcreateserial -extfile ./openssl.cfg -extensions v3_req
 ```
 
