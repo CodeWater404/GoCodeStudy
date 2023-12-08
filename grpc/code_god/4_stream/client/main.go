@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"io"
 	"log"
 	"time"
 )
@@ -47,7 +48,7 @@ func NormalRpcCall() {
 	fmt.Printf("client received prodStack:%v , prodPrice:%v\n", resp.GetProdStack(), resp.ProdPrice)
 }
 
-// ClientStreamRpcCall	客户端流式rpc调用,服务端实现调用的方法
+// ClientStreamRpcCall	客户端流式rpc调用，不断发送,服务端实现调用的方法
 func ClientStreamRpcCall() {
 	stream, err := client.UpdateProductClientStream(ctx)
 	if err != nil {
@@ -86,11 +87,40 @@ func prodRequest(stream pb.ProductService_UpdateProductClientStreamClient, resp 
 		}
 	}
 }
+
+// ServerStreamRpcCall 客户端不断接收
+func ServerStreamRpcCall() {
+	req := &pb.ProductRequest{
+		ProdId:   456,
+		ProdName: "code_server_stream",
+	}
+	stream, err := client.GetProductStockServerStream(ctx, req)
+	if err != nil {
+		log.Fatalf("client stream get failed:%v\n", err)
+	}
+
+	for {
+		recv, err := stream.Recv()
+		if err != nil {
+			if err == io.EOF {
+				log.Println("client received end!")
+				err = stream.CloseSend()
+				if err != nil {
+					log.Fatalf("client stream close failed:%v\n", err)
+				}
+				break
+			}
+			log.Fatalf("client received failed:%v\n", err)
+		}
+		log.Printf("===> client stream get resp:%#+v\n", recv)
+	}
+}
 func main() {
 	log.Println("client start...")
 	//在Go语言中，“defer”语句会在函数完成执行后安排函数执行，但延迟函数的参数会立即计算，所以不能在这里close
 	//new() // 这里可以改为init，不用显示调用
 	defer conn.Close()
 	//NormalRpcCall()
-	ClientStreamRpcCall()
+	//ClientStreamRpcCall()
+	ServerStreamRpcCall()
 }

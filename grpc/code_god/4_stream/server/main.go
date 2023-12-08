@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"time"
 )
 
 /**
@@ -47,6 +48,26 @@ func (p *ProductService) UpdateProductClientStream(stream pb.ProductService_Upda
 			if err != nil {
 				return err
 			}
+			return nil
+		}
+	}
+}
+
+// GetProductStockServerStream 服务端流,不断向客户端发送消息
+func (p *ProductService) GetProductStockServerStream(req *pb.ProductRequest, stream pb.ProductService_GetProductStockServerStreamServer) error {
+	count := 0
+	for {
+		resp := &pb.ProductResponse{
+			ProdStack: 200,
+			ProdPrice: 222,
+		}
+		err := stream.Send(resp)
+		if err != nil {
+			log.Fatalf("server send failed:%v , count:%v\n", err, count)
+		}
+		time.Sleep(time.Second)
+		count++
+		if count > 10 {
 			return nil
 		}
 	}
