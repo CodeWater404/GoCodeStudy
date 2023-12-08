@@ -115,6 +115,27 @@ func ServerStreamRpcCall() {
 		log.Printf("===> client stream get resp:%#+v\n", recv)
 	}
 }
+
+// ClientServerStreamRpcCall 双向流，客户端不断发送并接受，服务端不断接收并返回
+func ClientServerStreamRpcCall() {
+	stream, err := client.SayHelloStream(ctx)
+	for {
+		req := &pb.ProductRequest{
+			ProdId:   333,
+			ProdName: "code_client_server_stream",
+		}
+		err = stream.Send(req)
+		if err != nil {
+			log.Fatalf("client send failed:%v\n", err)
+		}
+		time.Sleep(time.Second)
+		recv, err := stream.Recv()
+		if err != nil {
+			log.Fatalf("client recv failed:%v\n", err)
+		}
+		log.Printf("===> client stream get resp:%#+v\n", recv)
+	}
+}
 func main() {
 	log.Println("client start...")
 	//在Go语言中，“defer”语句会在函数完成执行后安排函数执行，但延迟函数的参数会立即计算，所以不能在这里close
@@ -122,5 +143,6 @@ func main() {
 	defer conn.Close()
 	//NormalRpcCall()
 	//ClientStreamRpcCall()
-	ServerStreamRpcCall()
+	//ServerStreamRpcCall()
+	ClientServerStreamRpcCall()
 }

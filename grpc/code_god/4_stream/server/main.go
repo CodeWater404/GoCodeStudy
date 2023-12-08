@@ -73,6 +73,27 @@ func (p *ProductService) GetProductStockServerStream(req *pb.ProductRequest, str
 	}
 }
 
+// SayHelloStream 双向流,不断接收客户端消息并返回
+func (p *ProductService) SayHelloStream(stream pb.ProductService_SayHelloStreamServer) error {
+	for {
+		recv, err := stream.Recv()
+		if err != nil {
+			log.Fatalf("server received failed:%v\n", err)
+		}
+		log.Printf("===> server received req:%#+v\n", recv)
+		time.Sleep(time.Second)
+		resp := &pb.ProductResponse{
+			ProdStack: 400,
+			ProdPrice: 444,
+		}
+		err = stream.Send(resp)
+		if err != nil {
+			log.Fatalf("server send failed:%v\n", err)
+			return nil
+		}
+	}
+}
+
 func main() {
 	log.Println("server start...")
 	server := grpc.NewServer()
