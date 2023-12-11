@@ -11,18 +11,17 @@ import (
   @desc: 高精度加法
 **/
 
-//use math/big
+// use math/big
 func compute() {
-	var a, b, c big.Int
+	var a, b big.Int
 	var s1, s2 string
 	Scan(&s1, &s2)
 	a.SetString(s1, 10)
 	b.SetString(s2, 10)
-	ans := c.Add(&a, &b)
-	Println(ans)
+	Println(a.Add(&a, &b))
 }
 
-//simulation compute
+// simulation compute
 func add(a, b []int) []int {
 	if len(a) < len(b) {
 		return add(b, a)
