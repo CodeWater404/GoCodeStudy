@@ -1,6 +1,9 @@
 package __basicAlgorithm
 
-import "fmt"
+import (
+	"fmt"
+	"math/big"
+)
 
 /**
   @author: CodeWater
@@ -8,6 +11,7 @@ import "fmt"
   @desc: 高精度乘法
 **/
 
+// mul 用长的大整数每一位直接乘以b
 func mul(a []int, b int) []int {
 	var c []int
 	t := 0
@@ -19,6 +23,7 @@ func mul(a []int, b int) []int {
 		t /= 10
 	}
 
+	//去除前导0
 	for len(c) > 1 && c[len(c)-1] == 0 {
 		c = c[:len(c)-1]
 	}
@@ -41,4 +46,11 @@ func main() {
 		fmt.Print(c[i])
 	}
 	fmt.Println()
+}
+
+// ==================== 库函数 ====================
+func mul2() {
+	var a, b big.Int
+	fmt.Scan(&a, &b)
+	fmt.Println(a.Mul(&a, &b))
 }
