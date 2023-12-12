@@ -14,6 +14,7 @@ import (
   @desc: 子矩阵的和
 **/
 
+/*
 const N int = 1010
 
 var (
@@ -61,6 +62,50 @@ func main() {
 		y2, _ := strconv.Atoi(data[3])
 		fmt.Fprintln(writer, s[x2][y2]-s[x1-1][y2]-s[x2][y1-1]+s[x1-1][y1-1])
 		q--
+	}
+	defer writer.Flush()
+
+}
+*/
+
+// ==================== 优化写法 ====================
+
+const N int = 1010
+
+var (
+	n, m, q int
+	s       [N][N]int
+	reader  = bufio.NewReader(os.Stdin)
+	writer  = bufio.NewWriter(os.Stdout)
+)
+
+func doScan(reader *bufio.Reader) []string {
+	str, _ := reader.ReadString('\n')
+	str = strings.TrimSpace(str)
+	return strings.Split(str, " ")
+}
+
+func main() {
+	data := doScan(reader)
+	n, _ = strconv.Atoi(data[0])
+	m, _ = strconv.Atoi(data[1])
+	q, _ = strconv.Atoi(data[2])
+
+	for i := 1; i <= n; i++ {
+		data = doScan(reader)
+		for j := 1; j <= m; j++ {
+			a, _ := strconv.Atoi(data[j-1])
+			s[i][j] = s[i-1][j] + s[i][j-1] - s[i-1][j-1] + a
+		}
+	}
+
+	for ; q > 0; q-- {
+		data = doScan(reader)
+		x1, _ := strconv.Atoi(data[0])
+		y1, _ := strconv.Atoi(data[1])
+		x2, _ := strconv.Atoi(data[2])
+		y2, _ := strconv.Atoi(data[3])
+		fmt.Fprintf(writer, "%d\n", s[x2][y2]-s[x1-1][y2]-s[x2][y1-1]+s[x1-1][y1-1])
 	}
 	defer writer.Flush()
 
