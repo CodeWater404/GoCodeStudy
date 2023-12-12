@@ -1,6 +1,9 @@
 package __basicAlgorithm
 
-import "fmt"
+import (
+	"fmt"
+	"math/big"
+)
 
 /**
   @author: CodeWater
@@ -27,6 +30,16 @@ func div(a []int, b int, r *int) []int {
 		c = c[:len(c)-1]
 	}
 	return c
+}
+
+// ==================== 库函数 ====================
+func div2() {
+	var a, b big.Int
+	fmt.Scan(&a, &b)
+	// divmod其实会返回两个数商和余数，商赋值给第一个参数，余数赋值给第三个参数，这里是简写
+	// 正常是这样：s , r = a.DivMod(&a , &b , &r)
+	a.DivMod(&a, &b, &b)
+	fmt.Printf("%d\n%d", &a, &b)
 }
 
 func main() {
