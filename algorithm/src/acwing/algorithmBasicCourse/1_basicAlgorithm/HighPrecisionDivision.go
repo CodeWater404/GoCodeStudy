@@ -19,13 +19,19 @@ func div(a []int, b int, r *int) []int {
 		c = append(c, *r/b)
 		*r %= b
 	}
-	var temp []int
-	for i := len(c) - 1; i >= 0; i-- {
-		temp = append(temp, c[i])
+	//var temp []int
+	//for i := len(c) - 1; i >= 0; i-- {
+	//	temp = append(temp, c[i])
+	//}
+	////反转c
+	//c = temp
+
+	// 因为是商保存的时候0下标是从高位到低位开始，所以要反转一下（为了和其他三种高精度保持一致的存储）
+	//去除前导0======》优化写法
+	for i, j := 0, len(c)-1; i < j; i, j = i+1, j-1 {
+		c[i], c[j] = c[j], c[i]
 	}
-	//反转c
-	c = temp
-	//去除前导0
+
 	for len(c) > 1 && c[len(c)-1] == 0 {
 		c = c[:len(c)-1]
 	}
