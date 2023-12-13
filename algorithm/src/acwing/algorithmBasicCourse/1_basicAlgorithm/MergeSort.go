@@ -14,9 +14,20 @@ import (
   @desc: 归并排序
 **/
 
-const N = int(1e5) + 10
+const N int = 100010
 
-var q, temp = make([]int, N), make([]int, N)
+var (
+	n       int
+	q, temp = make([]int, N), make([]int, N)
+	reader  = bufio.NewReader(os.Stdin)
+	writer  = bufio.NewWriter(os.Stdout)
+)
+
+func doScan(reader *bufio.Reader) []string {
+	str, _ := reader.ReadString('\n')
+	str = strings.TrimSpace(str)
+	return strings.Split(str, " ")
+}
 
 func mergeSort(q []int, l, r int) {
 	if l >= r {
@@ -26,7 +37,7 @@ func mergeSort(q []int, l, r int) {
 	mergeSort(q, l, mid)
 	mergeSort(q, mid+1, r)
 	k, i, j := 0, l, mid+1
-	for i <= mid && j <= r {
+	for ; i <= mid && j <= r; k++ {
 		if q[i] < q[j] {
 			temp[k] = q[i]
 			i++
@@ -34,7 +45,6 @@ func mergeSort(q []int, l, r int) {
 			temp[k] = q[j]
 			j++
 		}
-		k++
 	}
 	for i <= mid {
 		temp[k] = q[i]
@@ -51,26 +61,17 @@ func mergeSort(q []int, l, r int) {
 }
 
 func main() {
-	reader := bufio.NewReader(os.Stdin)
-	str, _ := reader.ReadString('\n')
-	str = strings.TrimSpace(str)
-	//也可以直接写成： n , _ := strconv.Atoi(string(str[0]))
-	data := strings.Split(str, " ")
-	n, _ := strconv.Atoi(data[0])
-
-	str, _ = reader.ReadString('\n')
-	str = strings.TrimSpace(str)
-	data = strings.Split(str, " ")
+	data := doScan(reader)
+	n, _ = strconv.Atoi(data[0])
+	data = doScan(reader)
 	for i := 0; i < n; i++ {
 		q[i], _ = strconv.Atoi(data[i])
 	}
 
-	writer := bufio.NewWriter(os.Stdout)
-	defer writer.Flush()
-
 	mergeSort(q, 0, n-1)
+
 	for i := 0; i < n; i++ {
 		fmt.Fprintf(writer, "%d ", q[i])
 	}
-
+	defer writer.Flush()
 }
