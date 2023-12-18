@@ -9,7 +9,7 @@ import (
 /**
   @author: CodeWater
   @since: 2023/12/18
-  @desc: trace的编程过程
+  @desc: trace的编程过程:这个方式是通过浏览器来查看gmp的信息
 	1. 创建文件
 	2. 启动
 	3. 停止
