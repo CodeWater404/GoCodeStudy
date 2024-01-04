@@ -3,8 +3,11 @@
 
 ```markdown
 .
-├── code              # 参考code码神之路(暂停在微服务生成rpc文件)
+├── code              # 参考code码神之路(暂停在微服务生成rpc文件，不建议入门)
 │   └── helloword     # 入门案列
+├── feng              # [参考](https://www.bilibili.com/video/BV1kM411X7Cp/?p=4&spm_id_from=pageDriver&vd_source=428d32ac5556a6a38659408b8c8fb403)
+│   └── zero_study    # 入门案例
+│        
 ├── go.mod
 ├── go.sum
 └── readme.md         # 本文档
