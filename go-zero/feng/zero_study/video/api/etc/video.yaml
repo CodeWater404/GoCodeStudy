@@ -1,0 +1,10 @@
+Name: video
+Host: 0.0.0.0
+Port: 8888
+#配置etcd的地址即可，就不用配置user服务的地址
+UserRpc:
+  Etcd:
+    Hosts:
+      - 127.0.0.1:2379
+    Key: user.rpc
+

@@ -16,7 +16,10 @@
 
 # 遇到的问题
 
-## 1. 生成rpc代码失败
+## 1. 生成rpc代码失败(goctl1.4.4遇到的)
+> 2024-1-5: 使用最新版goctl1.6.1没有任何问题
+> 
+
 执行下列命令失败，有两种情况
 ```shell
 goctl rpc protoc ./code/microhelloworld/mall/user/rpc/user.proto --go_out=./types --go-grpc_out=./types --zrpc_out=.

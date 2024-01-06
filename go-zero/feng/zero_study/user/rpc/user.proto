@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package user;
+
+option go_package = "./user";
+
+message IdRequest {
+  string id = 1;
+}
+
+message UserResponse {
+  // 用户id
+  string id = 1;
+  // 用户名
+  string name = 2;
+  // 用户sex
+  bool gender = 3;
+}
+
+service User {
+  // 获取用户信息
+  rpc getUser(IdRequest) returns(UserResponse);
+}
+
+// goctl rpc protoc user/rpc/user.proto --go_out=user/rpc/types --go-grpc_out=user/rpc/types --zrpc_out=user/rpc
