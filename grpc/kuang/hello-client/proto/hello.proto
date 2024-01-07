@@ -2,8 +2,12 @@
 syntax = "proto3";
 
 // .表示当前位置    service是包名
-/*这部分的内容是关于最后生成的go文件是处在哪个目录哪个包.代表在当前目录生成.service代表了牛成的go文件的包名是service,*/
+/*这部分的内容是关于最后生成的go文件是处在哪个目录哪个包.代表在当前目录生成.service代表了生成的go文件的包名是service,*/
 option go_package = ".;service";
+
+//还有的分开
+//package service; //这是包名
+//option go_package = "./service"; //这是包文件名
 
 //定义服务
 service SayHello {
