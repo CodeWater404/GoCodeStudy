@@ -1,0 +1,39 @@
+type LoginRequest {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+type UserInfoResponse {
+	UserId    int    `json:"user_id"`
+	UserrName string `json:"username"`
+}
+
+@server (
+	prefix: /api/users
+)
+service users {
+	@doc(
+		summary: "用户登录"
+	)
+	@handler login
+	post /login (LoginRequest) returns (string)
+}
+
+@server (
+	prefix: /api/users
+	jwt:    Auth
+)
+service users {
+	@doc(
+		summary: "用户信息"
+	)
+	@handler userInfo
+	get /info returns (UserInfoResponse)
+}
+
+// goctl api go -api user.go -dir .
+// go install github.com/zeromicro/goctl-swagger@latest
+// 增加文档,没有doc目录需要创建
+//goctl api plugin -plugin goctl-swagger="swagger -filename app.json -host localhost:8888 -basepath /" -api F:\Code\GoCode\go-zero\feng\api_study\api_swagger\user.api -dir ./doc
+//todo：创建完成之后，用docker跑一下。（win10没有安装，展示没操作。如果有报错，需要把这个项目路径挂在到docker里面去）
+//docker run -d --name swag -p 8087:8080 -e SWAGGER_JSON=/opt/app.json -v D:\IT\go_project3\go_test\v1\api\doc\:/opt swaggerapi/swagger-ui
