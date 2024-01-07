@@ -1,0 +1,27 @@
+type UserCreateRequest {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+type UserInfoRequest {
+	//路由上的路径参数 ，底层会绑定到ctx中，key就是id
+	ID int `path:"id"`
+}
+
+type UserInfoResponse {
+	UserId    int    `json:"user_id"`
+	UserrName string `json:"username"`
+}
+
+@server (
+	prefix: /api/users
+)
+service users {
+	@handler create
+	post /login (UserCreateRequest) returns (string)
+
+	@handler userInfo
+	get /:id (UserInfoRequest) returns (UserInfoResponse)
+}
+
+// goctl api go -api user.api -dir .
