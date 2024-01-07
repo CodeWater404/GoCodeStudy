@@ -1,0 +1,35 @@
+type LoginRequest {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+type LoginResponse {
+	Code int    `json:"code"`
+	Data string `json:"data"`
+	Msg  string `json:"msg"`
+}
+
+type UserInfo {
+	UserId   uint   `json:"user_id"`
+	UserName string `json:"username"`
+}
+
+type UserInfoResponse {
+	Code int    `json:"code"`
+	Data string `json:"data"`
+	Msg  string `json:"msg"`
+}
+
+service users {
+	@handler login
+	post /api/users/login (LoginRequest) returns (LoginResponse)
+
+	@handler userInfo
+	get /api/users/info returns (UserInfoResponse)
+}
+
+//goctl api go -api user.api -dir .
+//初版api的问题：
+//1. response重复定义
+//2. 路由重复写/api/users
+//3. 对于需要鉴权的接口直接就能访问了
