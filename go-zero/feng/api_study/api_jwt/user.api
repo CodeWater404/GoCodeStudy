@@ -14,11 +14,16 @@ type UserInfoResponse {
 service users {
 	@handler login
 	post /login (LoginRequest) returns (string)
+}
 
+@server (
+	prefix: /api/users
+	jwt:    Auth
+)
+service users {
 	@handler userInfo
 	get /info returns (UserInfoResponse)
 }
 
 // goctl api go -api user.go -dir .
-// 增加了统一前缀
-// 还没有接口鉴权
+// 增加对应接口鉴权
