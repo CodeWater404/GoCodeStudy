@@ -1,0 +1,20 @@
+type LoginRequest {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+type UserInfoResponse {
+	UserId    int    `json:"user_id"`
+	UserrName string `json:"username"`
+}
+
+service users {
+	@handler login
+	post /api/users/login (LoginRequest) returns (string)
+
+	@handler userInfo
+	get /api/users/info returns (UserInfoResponse)
+}
+
+// goctl api go -api user.api -dir .
+// 封装统一响应的问题，不用再在这个里面重复写返回response
