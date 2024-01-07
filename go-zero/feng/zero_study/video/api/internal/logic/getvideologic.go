@@ -2,10 +2,10 @@ package logic
 
 import (
 	"context"
-	"go-zero/feng/zero_study/user/rpc/types/user"
+	"go-zero/feng/zero_demo/user/rpc/types/user"
 
-	"go-zero/feng/zero_study/video/api/internal/svc"
-	"go-zero/feng/zero_study/video/api/internal/types"
+	"go-zero/feng/zero_demo/video/api/internal/svc"
+	"go-zero/feng/zero_demo/video/api/internal/types"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )

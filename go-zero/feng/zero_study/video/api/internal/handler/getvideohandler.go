@@ -4,9 +4,9 @@ import (
 	"net/http"
 
 	"github.com/zeromicro/go-zero/rest/httpx"
-	"go-zero/feng/zero_study/video/api/internal/logic"
-	"go-zero/feng/zero_study/video/api/internal/svc"
-	"go-zero/feng/zero_study/video/api/internal/types"
+	"go-zero/feng/zero_demo/video/api/internal/logic"
+	"go-zero/feng/zero_demo/video/api/internal/svc"
+	"go-zero/feng/zero_demo/video/api/internal/types"
 )
 
 func getVideoHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {

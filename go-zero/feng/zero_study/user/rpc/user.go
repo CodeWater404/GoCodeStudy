@@ -4,10 +4,10 @@ import (
 	"flag"
 	"fmt"
 
-	"go-zero/feng/zero_study/user/rpc/internal/config"
-	"go-zero/feng/zero_study/user/rpc/internal/server"
-	"go-zero/feng/zero_study/user/rpc/internal/svc"
-	"go-zero/feng/zero_study/user/rpc/types/user"
+	"go-zero/feng/zero_demo/user/rpc/internal/config"
+	"go-zero/feng/zero_demo/user/rpc/internal/server"
+	"go-zero/feng/zero_demo/user/rpc/internal/svc"
+	"go-zero/feng/zero_demo/user/rpc/types/user"
 
 	"github.com/zeromicro/go-zero/core/conf"
 	"github.com/zeromicro/go-zero/core/service"

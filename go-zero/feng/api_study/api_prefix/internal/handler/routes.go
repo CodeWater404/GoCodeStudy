@@ -4,7 +4,7 @@ package handler
 import (
 	"net/http"
 
-	"go-zero/feng/zero_demo/video/api/internal/svc"
+	"go-zero/feng/api_study/api_prefix/internal/svc"
 
 	"github.com/zeromicro/go-zero/rest"
 )
@@ -14,9 +14,15 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 		[]rest.Route{
 			{
 				Method:  http.MethodGet,
-				Path:    "/api/video/:id",
-				Handler: getVideoHandler(serverCtx),
+				Path:    "/info",
+				Handler: userInfoHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodPost,
+				Path:    "/login",
+				Handler: loginHandler(serverCtx),
 			},
 		},
+		rest.WithPrefix("/api/users"),
 	)
 }

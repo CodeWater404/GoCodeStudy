@@ -2,8 +2,8 @@ package svc
 
 import (
 	"github.com/zeromicro/go-zero/zrpc"
-	"go-zero/feng/zero_study/user/rpc/userclient"
-	"go-zero/feng/zero_study/video/api/internal/config"
+	"go-zero/feng/zero_demo/user/rpc/userclient"
+	"go-zero/feng/zero_demo/video/api/internal/config"
 )
 
 type ServiceContext struct {

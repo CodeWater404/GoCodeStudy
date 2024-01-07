@@ -6,9 +6,9 @@ package server
 import (
 	"context"
 
-	"go-zero/feng/zero_study/user/rpc/internal/logic"
-	"go-zero/feng/zero_study/user/rpc/internal/svc"
-	"go-zero/feng/zero_study/user/rpc/types/user"
+	"go-zero/feng/zero_demo/user/rpc/internal/logic"
+	"go-zero/feng/zero_demo/user/rpc/internal/svc"
+	"go-zero/feng/zero_demo/user/rpc/types/user"
 )
 
 type UserServer struct {
