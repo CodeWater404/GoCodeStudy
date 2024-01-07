@@ -3,8 +3,8 @@ package logic
 import (
 	"context"
 	"github.com/zeromicro/go-zero/core/logx"
-	"go-zero/feng/api_study/api_jwt/internal/svc"
-	"go-zero/feng/api_study/api_jwt/internal/types"
+	"go-zero/feng/api_study/api_swagger/internal/svc"
+	"go-zero/feng/api_study/api_swagger/internal/types"
 	"go-zero/feng/common/jwt"
 )
 

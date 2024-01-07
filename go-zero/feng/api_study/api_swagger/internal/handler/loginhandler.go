@@ -4,9 +4,9 @@ import (
 	"net/http"
 
 	"github.com/zeromicro/go-zero/rest/httpx"
-	"go-zero/feng/api_study/api_jwt/internal/logic"
-	"go-zero/feng/api_study/api_jwt/internal/svc"
-	"go-zero/feng/api_study/api_jwt/internal/types"
+	"go-zero/feng/api_study/api_swagger/internal/logic"
+	"go-zero/feng/api_study/api_swagger/internal/svc"
+	"go-zero/feng/api_study/api_swagger/internal/types"
 
 	"go-zero/feng/common/response"
 )
