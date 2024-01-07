@@ -1,0 +1,24 @@
+type LoginRequest {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+type UserInfoResponse {
+	UserId    int    `json:"user_id"`
+	UserrName string `json:"username"`
+}
+
+service users {
+	@handler login
+	post /api/users/login (LoginRequest) returns (string)
+
+	@handler userInfo
+	get /api/users/info returns (UserInfoResponse)
+}
+
+// goctl api go -api user.api -dir .
+// 基于v2，使用模板生成handler，不用自己改
+// 带来相应问题：
+// 1. 模板里面的导入包都是写死的；
+// 2. 而且handler.tpl文件是对于本电脑的用户维度而言，如果还有其他项目，那又要改。
+// 3. 生成的hander文件，有的需要相应的包，有的又不需要，比如本例中的httpx，那这个时候又要手动去删除相对应的包

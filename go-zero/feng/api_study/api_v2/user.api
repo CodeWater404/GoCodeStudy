@@ -18,3 +18,4 @@ service users {
 
 // goctl api go -api user.api -dir .
 // 封装统一响应的问题，不用再在这个里面重复写返回response
+// 带来相应问题：每次生成一个服务，都要重复去改handler里面的返回
