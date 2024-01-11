@@ -1,4 +1,4 @@
-package __datastructure
+package __search_and_graph_theory
 
 import "fmt"
 
