@@ -31,6 +31,7 @@ func main() {
 	for i := 1; i <= n; i++ {
 		reader.Read(p[i : i+1])
 	}
+	//todo: 上面不用reader读取，直接用fmt.Scanf("%s\n", &p[1:])这里是不是就可以不用读取换行了？
 	reader.ReadString('\n') // 第二行到第三行有个换行符需要
 	fmt.Fscanf(reader, "%d\n", &m)
 	for i := 1; i <= m; i++ {
