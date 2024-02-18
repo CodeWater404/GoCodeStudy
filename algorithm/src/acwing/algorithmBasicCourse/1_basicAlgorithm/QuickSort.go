@@ -12,7 +12,7 @@ import (
   @author: CodeWater
   @since: 2023/5/28
   @desc: 快速排序
-
+	215_kth_largest_element_in_an_array.go 是用快排实现的降序
 **/
 
 var N = 100010
