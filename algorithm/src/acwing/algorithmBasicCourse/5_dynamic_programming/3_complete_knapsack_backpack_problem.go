@@ -52,6 +52,46 @@ package __dynamic_programming
 // }
 
 /* =====================优化一层for===================== */
+// import (
+// 	"fmt"
+// )
+
+// const N = 1010
+
+// var (
+// 	// n中物品，背包容量为m
+// 	n, m int
+// 	v, w [N]int
+// 	f    [N][N]int
+// )
+
+// func max(a, b int) int {
+// 	if a > b {
+// 		return a
+// 	}
+// 	return b
+// }
+
+// func main() {
+// 	fmt.Scan(&n, &m)
+// 	for i := 1; i <= n; i++ {
+// 		fmt.Scan(&v[i], &w[i])
+// 	}
+
+// 	for i := 1; i <= n; i++ {
+// 		for j := 0; j <= m; j++ {
+// 			f[i][j] = f[i-1][j]
+// 			if j >= v[i] {
+// 				// 状态方程变形一下，可以去掉k，优化一层for
+// 				f[i][j] = max(f[i][j], f[i][j-v[i]]+w[i])
+// 			}
+// 		}
+// 	}
+
+// 	fmt.Println(f[n][m])
+// }
+
+/* =====================状态方程优化成一维===================== */
 import (
 	"fmt"
 )
@@ -62,7 +102,7 @@ var (
 	// n中物品，背包容量为m
 	n, m int
 	v, w [N]int
-	f    [N][N]int
+	f    [N]int
 )
 
 func max(a, b int) int {
@@ -79,14 +119,11 @@ func main() {
 	}
 
 	for i := 1; i <= n; i++ {
-		for j := 0; j <= m; j++ {
-			f[i][j] = f[i-1][j]
-			if j >= v[i] {
-				// 状态方程变形一下，可以去掉k，优化一层for
-				f[i][j] = max(f[i][j], f[i][j-v[i]]+w[i])
-			}
+		// 继续优化，状态方程变成一维
+		for j := v[i]; j <= m; j++ {
+			f[j] = max(f[j], f[j-v[i]]+w[i])
 		}
 	}
 
-	fmt.Println(f[n][m])
+	fmt.Println(f[m])
 }
