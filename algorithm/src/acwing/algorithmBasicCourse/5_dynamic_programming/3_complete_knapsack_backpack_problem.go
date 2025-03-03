@@ -13,6 +13,45 @@ package __dynamic_programming
   当k = 0时，其实就是0个的表达式。所以这两个状态的表达式可以合并为第二个表达式。
 **/
 
+/* =====================朴素===================== */
+// import (
+// 	"fmt"
+// )
+
+// const N = 1010
+
+// var (
+// 	// n中物品，背包容量为m
+// 	n, m int
+// 	v, w [N]int
+// 	f    [N][N]int
+// )
+
+// func max(a, b int) int {
+// 	if a > b {
+// 		return a
+// 	}
+// 	return b
+// }
+
+// func main() {
+// 	fmt.Scan(&n, &m)
+// 	for i := 1; i <= n; i++ {
+// 		fmt.Scan(&v[i], &w[i])
+// 	}
+
+// 	for i := 1; i <= n; i++ {
+// 		for j := 0; j <= m; j++ {
+// 			for k := 0; k*v[i] <= j; k++ {
+// 				f[i][j] = max(f[i][j], f[i-1][j-k*v[i]]+k*w[i])
+// 			}
+// 		}
+// 	}
+
+// 	fmt.Println(f[n][m])
+// }
+
+/* =====================优化一层for===================== */
 import (
 	"fmt"
 )
@@ -41,8 +80,10 @@ func main() {
 
 	for i := 1; i <= n; i++ {
 		for j := 0; j <= m; j++ {
-			for k := 0; k*v[i] <= j; k++ {
-				f[i][j] = max(f[i][j], f[i-1][j-k*v[i]]+k*w[i])
+			f[i][j] = f[i-1][j]
+			if j >= v[i] {
+				// 状态方程变形一下，可以去掉k，优化一层for
+				f[i][j] = max(f[i][j], f[i][j-v[i]]+w[i])
 			}
 		}
 	}
