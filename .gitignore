@@ -24,6 +24,7 @@
 *.ear
 target
 .idea
+.vscode
 .DS_Store
 exports
 # virtual machine crash logs, see
