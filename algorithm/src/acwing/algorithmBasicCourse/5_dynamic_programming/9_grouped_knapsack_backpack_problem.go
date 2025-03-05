@@ -1,5 +1,11 @@
 package main
 
+/*
+  @author: CodeWater
+  @since: 2025/03/04
+  @desc: 9. 分组背包
+*/
+
 import "fmt"
 
 const N = 110
